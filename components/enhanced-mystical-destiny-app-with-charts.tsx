@@ -12,6 +12,9 @@ import {
   PieChart, Pie,
 } from 'recharts';
 
+import { Text, ReferenceLine } from 'recharts';
+import { scaleSequential } from 'd3-scale';
+import { interpolateBlues } from 'd3-scale-chromatic';
 // Simulated API call
 const fetchDestinyAnalysis = async (birthInfo: { date: string; city: string; gender: string }) => {
   // Simulate API delay
@@ -326,48 +329,38 @@ const FiveElementsRadarChart: React.FC<ChartProps> = ({ data }) => {
 };
 
 const ThreeYearsForecastChart: React.FC<ChartProps> = ({ data }) => {
-  const [activeType, setActiveType] = useState('overall');
-
-  const gradientOffset = () => {
-    const dataMax = Math.max(...data.map((i) => i[activeType]));
-    const dataMin = Math.min(...data.map((i) => i[activeType]));
-    
-    if (dataMax <= 0) {
-      return 0;
-    }
-    if (dataMin >= 0) {
-      return 1;
-    }
-    
-    return dataMax / (dataMax - dataMin);
+  const COLORS = {
+    overall: '#2196F3',
+    wealth: '#4CAF50',
+    health: '#FF5722',
+    love: '#E91E63',
   };
 
   return (
     <div>
       <LineChart width={500} height={300} data={data} style={{ margin: 'auto' }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-        <XAxis dataKey="year" stroke="#ffffff" />
-        <YAxis domain={[0, 10]} stroke="#ffffff" />
+        <XAxis dataKey="year" stroke="#ffffff" label={{ value: '年份', position: 'insideBottomRight', offset: -10, fill: '#ffffff' }} />
+        <YAxis domain={[0, 10]} stroke="#ffffff" label={{ value: '运势评分', angle: -90, position: 'insideLeft', fill: '#ffffff' }} />
         <Tooltip
           contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
           labelStyle={{ color: '#ffffff' }}
           itemStyle={{ color: '#ffffff' }}
         />
         <Legend />
-        <defs>
-          <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset={gradientOffset()} stopColor="#82ca9d" stopOpacity={1} />
-            <stop offset={gradientOffset()} stopColor="#8884d8" stopOpacity={1} />
-          </linearGradient>
-        </defs>
-        <Line type="monotone" dataKey={activeType} stroke="url(#splitColor)" strokeWidth={2} dot={{ r: 6 }} activeDot={{ r: 8 }} />
+        {Object.entries(COLORS).map(([key, color]) => (
+          <Line
+            key={key}
+            type="monotone"
+            dataKey={key}
+            stroke={color}
+            strokeWidth={2}
+            dot={{ r: 6 }}
+            activeDot={{ r: 8 }}
+          />
+        ))}
       </LineChart>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
-        <button onClick={() => setActiveType('overall')} style={{ marginRight: '10px' }}>整体运势</button>
-        <button onClick={() => setActiveType('wealth')} style={{ marginRight: '10px' }}>财运</button>
-        <button onClick={() => setActiveType('health')} style={{ marginRight: '10px' }}>健康</button>
-        <button onClick={() => setActiveType('love')}>情感</button>
-      </div>
+      <p style={{ textAlign: 'center', marginTop: '10px' }}>此图展示了未来三年在不同方面的运势变化趋势。</p>
     </div>
   );
 };
@@ -383,27 +376,43 @@ const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
     })
   );
 
+  const colorScale = scaleSequential(interpolateBlues).domain([0, 10]);
+
   return (
-    <ScatterChart width={500} height={300} margin={{ top: 20, right: 20, bottom: 20, left: 20 }} style={{ margin: 'auto' }}>
-      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-      <XAxis type="number" dataKey="month" name="月份" unit="月" stroke="#ffffff" />
-      <YAxis type="number" dataKey="year" name="年份" unit="年" stroke="#ffffff" />
-      <ZAxis type="number" dataKey="score" range={[0, 500]} name="运势评分" unit="分" />
-      <Tooltip
-        cursor={{ strokeDasharray: '3 3' }}
-        contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
-        labelStyle={{ color: '#ffffff' }}
-        itemStyle={{ color: '#ffffff' }}
-      />
-      <Scatter
-        name="运势热力图"
-        data={formattedData}
-        fill="#8884d8"
-        shape="rect"
-        width={30}
-        height={30}
-      />
-    </ScatterChart>
+    <div>
+      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>未来三年每月运势强弱变化趋势</h3>
+      <ScatterChart width={500} height={300} margin={{ top: 20, right: 20, bottom: 20, left: 20 }} style={{ margin: 'auto' }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+        <XAxis type="number" dataKey="month" name="月份" unit="月" stroke="#ffffff" />
+        <YAxis type="number" dataKey="year" name="年份" unit="年" stroke="#ffffff" />
+        <ZAxis type="number" dataKey="score" range={[0, 500]} name="运势评分" unit="分" />
+        <Tooltip
+          cursor={{ strokeDasharray: '3 3' }}
+          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+          labelStyle={{ color: '#ffffff' }}
+          itemStyle={{ color: '#ffffff' }}
+          formatter={(value: any, name: string) => [value, name === 'score' ? '运势评分' : name]}
+        />
+        <Scatter
+          name="运势热力图"
+          data={formattedData}
+          fill="#8884d8"
+          shape="rect"
+        >
+          {formattedData.map((entry: any, index: number) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={colorScale(entry.score)}
+            />
+          ))}
+        </Scatter>
+      </ScatterChart>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+        <span>运势强弱：</span>
+        <span style={{ background: 'linear-gradient(to right, #f7fbff, #08306b)', width: '100px', height: '20px', marginLeft: '10px' }}></span>
+        <span style={{ marginLeft: '10px' }}>弱 → 强</span>
+      </div>
+    </div>
   );
 };
 
@@ -413,12 +422,21 @@ const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data }) => {
     unlucky: '#FF5722',
   };
 
+  const ICONS = {
+    木: '🌳',
+    火: '🔥',
+    土: '🏔️',
+    金: '🏅',
+    水: '💧',
+  };
+
   return (
     <div>
+      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>喜用神与忌用神在五行中的数量分布</h3>
       <BarChart width={500} height={300} data={data} style={{ margin: 'auto' }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-        <XAxis dataKey="name" stroke="#ffffff" />
-        <YAxis stroke="#ffffff" />
+        <XAxis dataKey="name" stroke="#ffffff" label={{ value: '五行元素', position: 'insideBottomRight', offset: -10, fill: '#ffffff' }} />
+        <YAxis stroke="#ffffff" label={{ value: '数量/强度', angle: -90, position: 'insideLeft', fill: '#ffffff' }} />
         <Tooltip
           contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
           labelStyle={{ color: '#ffffff' }}
@@ -430,6 +448,19 @@ const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data }) => {
             <Cell key={`cell-${index}`} fill={COLORS[entry.type]} />
           ))}
         </Bar>
+        <ReferenceLine y={0} stroke="#ffffff" />
+        {data.map((entry, index) => (
+          <Text
+            key={`label-${index}`}
+            x={index * (500 / data.length) + (500 / data.length) / 2}
+            y={300}
+            textAnchor="middle"
+            verticalAnchor="start"
+            fill="#ffffff"
+          >
+            {ICONS[entry.name as keyof typeof ICONS]}
+          </Text>
+        ))}
       </BarChart>
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
         <span style={{ color: COLORS.lucky, marginRight: '10px' }}>■ 喜用神</span>
@@ -665,7 +696,7 @@ export function EnhancedMysticalDestinyAppWithCharts() {
                   style={{ background: 'linear-gradient(135deg, #E6D9B8, #D4AF37)' }}
                 />
               </ChartCard>
-              <ChartCard title="大运解析" icon={<TrendingUp size={24} />}>
+              <ChartCard title="���运解析" icon={<TrendingUp size={24} />}>
                 <AnalysisCard
                   title="大运解析"
                   content={analysis.tenYearFortune}
@@ -729,9 +760,10 @@ export function EnhancedMysticalDestinyAppWithCharts() {
               background: 'linear-gradient(45deg, #ff00ff, #00ffff)',
               ...buttonAnimation
             }}
+            title="点击下载当前内容为图片格式，或右键选择图片另存为"
           >
             <Share2 style={{ marginRight: '0.5rem' }} />
-            分享给好友
+            📤 分享给好友 / ⬇️ 下载图片
           </animated.button>
         </div>
       )}
