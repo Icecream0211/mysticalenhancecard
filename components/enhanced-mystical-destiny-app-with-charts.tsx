@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSpring, animated, config } from 'react-spring';
-import { Star, Moon, Sun, Share2 } from 'lucide-react';
+import { Star, Moon, Sun, Share2, TrendingUp, Activity, Compass, Zap } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
   ScatterChart, Scatter, ZAxis,
-  BarChart, Bar,
-  PieChart, Pie, Cell,
+  BarChart, Bar, Cell,
+  PieChart, Pie,
 } from 'recharts';
 
 // Simulated API call
@@ -225,7 +225,25 @@ type DirectionColor = {
   value: number;
 };
 
-const ChartCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
+const NavTab: React.FC<{ label: string; active: boolean; onClick: () => void }> = ({ label, active, onClick }) => (
+  <button
+    onClick={onClick}
+    style={{
+      fontSize: '18px',
+      padding: '10px 20px',
+      backgroundColor: active ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+      color: active ? '#ffffff' : '#cccccc',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+    }}
+  >
+    {label}
+  </button>
+);
+
+const ChartCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => {
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef(null);
 
@@ -263,17 +281,21 @@ const ChartCard: React.FC<{ title: string; children: React.ReactNode }> = ({ tit
       background: 'rgba(255, 255, 255, 0.1)',
       borderRadius: '12px',
       padding: '20px',
-      marginBottom: '25px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      margin: '20px auto',
+      width: '90%',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
     }}>
-      <h3 style={{
-        fontSize: '24px',
-        marginBottom: '15px',
-        color: '#ffffff',
-        textShadow: '0px 1px 2px rgba(0, 0, 0, 0.5)',
-      }}>
-        {title}
-      </h3>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+        {icon}
+        <h3 style={{
+          fontSize: '24px',
+          marginLeft: '10px',
+          color: '#ffffff',
+          textShadow: '0px 1px 2px rgba(0, 0, 0, 0.5)',
+        }}>
+          {title}
+        </h3>
+      </div>
       {children}
     </animated.div>
   );
@@ -536,7 +558,7 @@ export function EnhancedMysticalDestinyAppWithCharts() {
       }}>
         Mystical Destiny Revealer
       </h1>
-      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px' }}>
+      <form onSubmit={handleSubmit} style={{ width: '90%', maxWidth: '600px' }}>
         <div style={{ marginBottom: '1rem' }}>
           <label htmlFor="date" style={{ display: 'block', marginBottom: '0.5rem', color: '#ffffff' }}>Birth Date & Time:</label>
           <input
@@ -618,48 +640,56 @@ export function EnhancedMysticalDestinyAppWithCharts() {
           backgroundColor: 'rgba(255, 0, 0, 0.2)',
           border: '1px solid #ff0000',
           borderRadius: '4px',
-          color: '#ff0000'
+          color: '#ff0000',
+          width: '90%',
+          maxWidth: '600px',
         }}>
           {error}
         </div>
       )}
       {analysis && (
         <div ref={resultsRef} style={{ marginTop: '2rem', width: '100%', maxWidth: '800px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-            <button onClick={() => setActiveTab('overview')} style={{ marginRight: '10px' }}>命盘概览</button>
-            <button onClick={() => setActiveTab('forecast')} style={{ marginRight: '10px' }}>运势预测</button>
-            <button onClick={() => setActiveTab('fiveElements')} style={{ marginRight: '10px' }}>五行分析</button>
-            <button onClick={() => setActiveTab('luckyElements')}>喜用神分布</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', width: '90%', margin: '0 auto' }}>
+            <NavTab label="命盘概览" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
+            <NavTab label="运势预测" active={activeTab === 'forecast'} onClick={() => setActiveTab('forecast')} />
+            <NavTab label="五行分析" active={activeTab === 'fiveElements'} onClick={() => setActiveTab('fiveElements')} />
+            <NavTab label="喜用神分布" active={activeTab === 'luckyElements'} onClick={() => setActiveTab('luckyElements')} />
           </div>
           {activeTab === 'overview' && (
             <>
-              <AnalysisCard
-                title="命盘分析"
-                content={analysis.birthChart}
-                emoji="✨"
-                style={{ background: 'linear-gradient(135deg, #E6D9B8, #D4AF37)' }}
-              />
-              <AnalysisCard
-                title="大运解析"
-                content={analysis.tenYearFortune}
-                emoji="📈"
-                style={{ background: 'linear-gradient(135deg, #C9E7F2, #87CEEB)' }}
-              />
-              <AnalysisCard
-                title="喜忌格局"
-                content={analysis.likeAndDislike}
-                emoji="⚖️"
-                style={{ background: 'linear-gradient(135deg, #E0D7F6, #B19CD9)' }}
-              />
+              <ChartCard title="命盘分析" icon={<Compass size={24} />}>
+                <AnalysisCard
+                  title="命盘分析"
+                  content={analysis.birthChart}
+                  emoji="✨"
+                  style={{ background: 'linear-gradient(135deg, #E6D9B8, #D4AF37)' }}
+                />
+              </ChartCard>
+              <ChartCard title="大运解析" icon={<TrendingUp size={24} />}>
+                <AnalysisCard
+                  title="大运解析"
+                  content={analysis.tenYearFortune}
+                  emoji="📈"
+                  style={{ background: 'linear-gradient(135deg, #C9E7F2, #87CEEB)' }}
+                />
+              </ChartCard>
+              <ChartCard title="喜忌格局" icon={<Activity size={24} />}>
+                <AnalysisCard
+                  title="喜忌格局"
+                  content={analysis.likeAndDislike}
+                  emoji="⚖️"
+                  style={{ background: 'linear-gradient(135deg, #E0D7F6, #B19CD9)' }}
+                />
+              </ChartCard>
             </>
           )}
           {activeTab === 'forecast' && (
             <>
-              <ChartCard title="未来三年运势预测">
+              <ChartCard title="未来三年运势预测" icon={<TrendingUp size={24} />}>
                 <ThreeYearsForecastChart data={analysis.threeYearsForecast} />
                 <p style={{ textAlign: 'center', marginTop: '10px' }}>此图展示了未来三年在不同方面的运势变化趋势。</p>
               </ChartCard>
-              <ChartCard title="运势热力图">
+              <ChartCard title="运势热力图" icon={<Activity size={24} />}>
                 <FortuneHeatMap data={analysis.monthlyFortune} />
                 <p style={{ textAlign: 'center', marginTop: '10px' }}>此热力图展示了未来三年每月的运势强弱变化。</p>
               </ChartCard>
@@ -667,18 +697,18 @@ export function EnhancedMysticalDestinyAppWithCharts() {
           )}
           {activeTab === 'fiveElements' && (
             <>
-              <ChartCard title="五行平衡雷达图">
+              <ChartCard title="五行平衡雷达图" icon={<Compass size={24} />}>
                 <FiveElementsRadarChart data={analysis.fiveElements} />
                 <p style={{ textAlign: 'center', marginTop: '10px' }}>此雷达图展示了您八字中五行元素的强弱平衡情况。</p>
               </ChartCard>
-              <ChartCard title="方位与颜色配对图">
+              <ChartCard title="方位与颜色配对图" icon={<Compass size={24} />}>
                 <DirectionColorPairingChart data={analysis.directionColors} />
                 <p style={{ textAlign: 'center', marginTop: '10px' }}>此饼图展示了不同方位及其对应的幸运颜色。</p>
               </ChartCard>
             </>
           )}
           {activeTab === 'luckyElements' && (
-            <ChartCard title="喜用神与忌用神分布图">
+            <ChartCard title="喜用神与忌用神分布图" icon={<Zap size={24} />}>
               <LuckyUnluckyElementsChart data={analysis.luckyUnluckyElements} />
               <p style={{ textAlign: 'center', marginTop: '10px' }}>此柱状图展示了对您有利和不利的五行元素分布。</p>
             </ChartCard>
@@ -686,7 +716,7 @@ export function EnhancedMysticalDestinyAppWithCharts() {
           <animated.button
             onClick={handleShare}
             style={{
-              width: '100%',
+              width: '90%',
               padding: '0.75rem',
               backgroundColor: '#4a0e4a',
               border: 'none',
