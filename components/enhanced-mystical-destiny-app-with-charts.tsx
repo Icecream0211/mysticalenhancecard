@@ -368,12 +368,12 @@ const ThreeYearsForecastChart: React.FC<ChartProps> = ({ data }) => {
 const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear + i);
-  const scores = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   const formattedData = years.flatMap(year =>
-    scores.map(score => {
-      const matchingData = data.find((item: any) => item.year === year && item.score === score);
-      return { year, score, value: matchingData ? matchingData.value : 0 };
+    months.map(month => {
+      const matchingData = data.find((item: any) => item.year === year && item.month === month);
+      return { year, month, score: matchingData ? matchingData.score : 0 };
     })
   );
 
@@ -386,41 +386,34 @@ const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 60 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
           <XAxis
-            type="category"
             dataKey="year"
-            name="年份"
+            type="category"
             allowDuplicatedCategory={false}
             tick={{ fill: '#ffffff' }}
           />
           <YAxis
-            type="number"
-            dataKey="score"
-            name="运势指数"
-            domain={[0, 10]}
+            dataKey="month"
+            type="category"
+            allowDuplicatedCategory={false}
             tick={{ fill: '#ffffff' }}
-            label={{ value: '运势强弱评分', angle: -90, position: 'insideLeft', fill: '#ffffff' }}
+            tickFormatter={(value) => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][value - 1]}
           />
-          <ZAxis type="number" dataKey="value" range={[0, 500]} />
+          <ZAxis type="number" dataKey="score" range={[0, 500]} />
           <Tooltip
             cursor={{ strokeDasharray: '3 3' }}
             contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
             labelStyle={{ color: '#ffffff' }}
             itemStyle={{ color: '#ffffff' }}
             formatter={(value: any, name: string, props: any) => [
-              `${props.payload.year}年`,
-              `运势指数: ${props.payload.score}`,
-              `整体运势: ${value}分`,
-              `财运: ${Math.round(value * 0.8)}分`,
-              `健康: ${Math.round(value * 1.2)}分`,
+              `${props.payload.year}年${props.payload.month}月`,
+              `运势评分: ${props.payload.score}`,
+              `整体运势: ${props.payload.score}分`,
+              `财运: ${Math.round(props.payload.score * 0.8)}分`,
+              `健康: ${Math.round(props.payload.score * 1.2)}分`,
             ]}
           />
-          <Scatter
-            name="运势热力图"
-            data={formattedData}
-            fill="#8884d8"
-            shape="rect"
-          >
-            {formattedData.map((entry: any, index: number) => (
+          <Scatter data={formattedData} fill="#8884d8">
+            {formattedData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={colorScale(entry.score)}
@@ -438,7 +431,7 @@ const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
   );
 };
 
-const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data }) => {
+const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data, tenYearFortune }) => {
   const COLORS = {
     lucky: '#4CAF50',
     unlucky: '#FF5722',
@@ -452,67 +445,66 @@ const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data }) => {
     水: '💧',
   };
 
+  const fortunePeriods = tenYearFortune.split('\n').filter(Boolean);
+
   return (
     <div>
-      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>喜用神与忌用神在五行中的数量分布</h3>
-      <BarChart width={500} height={300} data={data} style={{ margin: 'auto' }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-        <XAxis dataKey="name" stroke="#ffffff" label={{ value: '五行元素', position: 'insideBottomRight', offset: -10, fill: '#ffffff' }} />
-        <YAxis stroke="#ffffff" label={{ value: '数量/强度', angle: -90, position: 'insideLeft', fill: '#ffffff' }} />
-        <Tooltip
-          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
-          labelStyle={{ color: '#ffffff' }}
-          itemStyle={{ color: '#ffffff' }}
-        />
-        <Legend />
-        <Bar dataKey="value" fill="#8884d8">
-          {(data as LuckyUnluckyElement[]).map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[entry.type]} />
+      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>喜用神与大运结合分析</h3>
+      <ResponsiveContainer width="100%" height={400}>
+        <BarChart data={data} layout="vertical">
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis type="number" />
+          <YAxis dataKey="name" type="category" />
+          <Tooltip
+            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+            labelStyle={{ color: '#ffffff' }}
+            itemStyle={{ color: '#ffffff' }}
+            formatter={(value, name, props) => [
+              `${props.payload.name}: ${value}`,
+              `类型: ${props.payload.type === 'lucky' ? '喜用神' : '忌用神'}`,
+              fortunePeriods[props.index] || '',
+            ]}
+          />
+          <Legend />
+          <Bar dataKey="value" fill="#8884d8">
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[entry.type]} />
+            ))}
+          </Bar>
+          {fortunePeriods.map((period, index) => (
+            <ReferenceLine
+              key={`line-${index}`}
+              x={index * (100 / fortunePeriods.length)}
+              stroke="#fff"
+              label={{ value: period.split('：')[0], fill: '#fff', position: 'insideTopRight' }}
+            />
           ))}
-        </Bar>
-        <ReferenceLine y={0} stroke="#ffffff" />
-        {data.map((entry, index) => (
-          <Text
-            key={`label-${index}`}
-            x={index * (500 / data.length) + (500 / data.length) / 2}
-            y={300}
-            textAnchor="middle"
-            verticalAnchor="start"
-            fill="#ffffff"
-          >
-            {ICONS[entry.name as keyof typeof ICONS]}
-          </Text>
-        ))}
-      </BarChart>
+        </BarChart>
+      </ResponsiveContainer>
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
         <span style={{ color: COLORS.lucky, marginRight: '10px' }}>■ 喜用神</span>
         <span style={{ color: COLORS.unlucky }}>■ 忌用神</span>
       </div>
+      <p style={{ textAlign: 'center', marginTop: '20px' }}>
+        此图表展示了喜用神与忌用神在不同大运阶段的分布情况，帮助您理解各阶段的运势特点。
+      </p>
     </div>
   );
 };
 
 const DirectionColorPairingChart: React.FC<ChartProps> = ({ data }) => {
   const COLORS: Record<DirectionColor['direction'], string> = {
-    东: '#FF5722',
-    南: '#FFC107',
-    西: '#4CAF50',
+    东: '#4CAF50',
+    南: '#FF5722',
+    西: '#FFC107',
     北: '#2196F3',
     中: '#9C27B0',
   };
 
   const ICONS: Record<DirectionColor['direction'], string> = {
-    东: '→',
-    南: '↓',
-    西: '←',
-    北: '↑',
-    中: '⊙',
-  };
-
-  const ELEMENT_ICONS: Record<DirectionColor['direction'], string> = {
-    东: '🔥',
-    南: '🌞',
-    西: '🌳',
+    东: '🌳',
+    南: '🔥',
+    西: '🏅',
     北: '💧',
     中: '🏔️',
   };
@@ -520,54 +512,38 @@ const DirectionColorPairingChart: React.FC<ChartProps> = ({ data }) => {
   return (
     <div>
       <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>方位与幸运颜色配对图</h3>
-      <ResponsiveContainer width="100%" height={400}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={80}
-            fill="#8884d8"
-            paddingAngle={5}
-            dataKey="value"
+      <div style={{ 
+        width: '300px', 
+        height: '300px', 
+        margin: 'auto', 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateRows: 'repeat(3, 1fr)',
+        gap: '5px',
+      }}>
+        {['西北', '北', '东北', '西', '中', '东', '西南', '南', '东南'].map((direction, index) => (
+          <div
+            key={direction}
+            style={{
+              backgroundColor: COLORS[direction.includes('中') ? '中' : direction.slice(-1) as DirectionColor['direction']],
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              fontSize: '24px',
+              color: '#ffffff',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.7)',
+              cursor: 'pointer',
+            }}
+            title={`${direction}: ${data.find(item => item.direction === direction)?.meaning}`}
           >
-            {(data as DirectionColor[]).map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[entry.direction]} />
-            ))}
-            {(data as DirectionColor[]).map((entry, index) => (
-              <Label
-                key={`label-${index}`}
-                position="center"
-                content={({ viewBox: { cx, cy } }) => (
-                  <text
-                    x={cx + Math.cos(index * Math.PI / 2.5 - Math.PI / 2) * 70}
-                    y={cy + Math.sin(index * Math.PI / 2.5 - Math.PI / 2) * 70}
-                    fill="#ffffff"
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                  >
-                    {ICONS[entry.direction]} {entry.direction} {ELEMENT_ICONS[entry.direction]}
-                  </text>
-                )}
-              />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
-            labelStyle={{ color: '#ffffff' }}
-            itemStyle={{ color: '#ffffff' }}
-            formatter={(value: any, name: string, props: any) => [
-              `${props.payload.direction}: ${props.payload.color}`,
-              props.payload.meaning,
-            ]}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+            {ICONS[direction.includes('中') ? '中' : direction.slice(-1) as DirectionColor['direction']]}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', marginTop: '20px' }}>
         {Object.entries(COLORS).map(([direction, color]) => (
           <span key={direction} style={{ margin: '0 10px', color }}>
-            ■ {direction}: {color} ({ELEMENT_ICONS[direction as keyof typeof ELEMENT_ICONS]})
+            ■ {direction}: {color} ({ICONS[direction as DirectionColor['direction']]})
           </span>
         ))}
       </div>
@@ -811,8 +787,10 @@ export function EnhancedMysticalDestinyAppWithCharts() {
           )}
           {activeTab === 'luckyElements' && (
             <ChartCard title="喜用神与忌用神分布图" icon={<Zap size={24} />}>
-              <LuckyUnluckyElementsChart data={analysis.luckyUnluckyElements} />
-              <p style={{ textAlign: 'center', marginTop: '10px' }}>此柱状图展示了对您有利和不利的五行元素分布。</p>
+              <LuckyUnluckyElementsChart 
+                data={analysis.luckyUnluckyElements} 
+                tenYearFortune={analysis.tenYearFortune}
+              />
             </ChartCard>
           )}
           <animated.button
