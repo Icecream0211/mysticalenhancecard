@@ -267,6 +267,8 @@ const ThreeYearsForecastChart: React.FC<ChartProps> = ({ data }) => {
   );
 };
 
+
+
 const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
   // 修复 Set 类型错误
   const years = Array.from(new Set(data.map((item: any) => item.year)));
