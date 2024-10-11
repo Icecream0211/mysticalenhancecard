@@ -16,6 +16,7 @@ import { Text, ReferenceLine } from 'recharts';
 import { scaleSequential } from 'd3-scale';
 import { interpolateBlues } from 'd3-scale-chromatic';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./ui/accordion";
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Simulated API call
 const fetchDestinyAnalysis = async (birthInfo: { date: string; city: string; gender: string }) => {
@@ -664,6 +665,107 @@ const FiveElementsFlowChart: React.FC<FiveElementsFlowChartProps> = ({ data, ten
   );
 };
 
+const CombinedLuckyElementsChart: React.FC<{ data: LuckyUnluckyElement[], tenYearFortune: string }> = ({ data, tenYearFortune }) => {
+  const [mode, setMode] = useState<'overview' | 'detailed'>('overview');
+
+  const fortunePeriods = tenYearFortune.split('\n').filter(Boolean);
+  const elements = ['木', '火', '土', '金', '水'];
+
+  const processedData = data.flatMap(item =>
+    fortunePeriods.map(period => ({
+      ...item,
+      period: period.split('：')[0],
+      yearRange: period.split('：')[1].split('岁')[0],
+      value: item.value / fortunePeriods.length,
+    }))
+  );
+
+  const COLORS = {
+    木: '#4CAF50',
+    火: '#FF5722',
+    土: '#FFC107',
+    金: '#9E9E9E',
+    水: '#2196F3',
+  };
+
+  const OverallAnalysis = () => (
+    <div style={{ marginBottom: '20px', padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '10px' }}>
+      <h4 style={{ textAlign: 'center' }}>整体分析</h4>
+      <p>
+        根据五行喜忌流变图表，我们可以看出各大运阶段的主要特点：
+        {fortunePeriods.map((period, index) => (
+          <span
+            key={index}
+            style={{ display: 'block', marginTop: '10px', cursor: 'pointer' }}
+            title={`点击查看${period}的详细分析`}
+            onClick={() => alert(`这里将显示${period}的详细分析内容`)}
+          >
+            • {period}：
+            {elements.map(element => {
+              const elementData = processedData.find(item => item.element === element && item.period === period.split('：')[0]);
+              return elementData ? `${element}${elementData.type === 'lucky' ? '旺' : '弱'} ` : '';
+            })}
+          </span>
+        ))}
+      </p>
+      <p style={{ marginTop: '20px', fontStyle: 'italic' }}>
+        提示：点击各个时期可以查看更详细的分析内容。
+      </p>
+    </div>
+  );
+
+  return (
+    <div>
+      <OverallAnalysis />
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+        <button
+          onClick={() => setMode('overview')}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: mode === 'overview' ? '#4a0e4a' : 'transparent',
+            color: '#ffffff',
+            border: '1px solid #4a0e4a',
+            borderRadius: '4px 0 0 4px',
+            cursor: 'pointer',
+          }}
+          title="显示五行元素的总体分布情况"
+        >
+          总览模式
+        </button>
+        <button
+          onClick={() => setMode('detailed')}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: mode === 'detailed' ? '#4a0e4a' : 'transparent',
+            color: '#ffffff',
+            border: '1px solid #4a0e4a',
+            borderRadius: '0 4px 4px 0',
+            cursor: 'pointer',
+          }}
+          title="显示每个五行元素在各个大运阶段中的详细流变"
+        >
+          详细模式
+        </button>
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={mode}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          {mode === 'overview' ? (
+            <LuckyUnluckyElementsChart data={data} tenYearFortune={tenYearFortune} />
+          ) : (
+            <FiveElementsFlowChart data={data} tenYearFortune={tenYearFortune} />
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const ChartSection: React.FC<ChartSectionProps> = ({ title, children }) => (
   <div style={{ marginBottom: '30px' }}>
     <h2 style={{
@@ -878,7 +980,7 @@ export function EnhancedMysticalDestinyAppWithCharts() {
             <>
               <ChartCard title="未来三年运势预测" icon={<TrendingUp size={24} />}>
                 <ThreeYearsForecastChart data={analysis.threeYearsForecast} />
-                <p style={{ textAlign: 'center', marginTop: '10px' }}>此图展示了未来三年在不同方面的运势变化趋势。</p>
+                <p style={{ textAlign: 'center', marginTop: '10px' }}>此图展示了��来三年在不同方面的运势变化趋势。</p>
               </ChartCard>
               <ChartCard title="运势热力图" icon={<Activity size={24} />}>
                 <FortuneHeatMap data={analysis.monthlyFortune} />
@@ -900,15 +1002,9 @@ export function EnhancedMysticalDestinyAppWithCharts() {
           )}
           {activeTab === 'luckyElements' && (
             <>
-              <ChartCard title="喜用神与大运阶段分布" icon={<Zap size={24} />}>
-                <LuckyUnluckyElementsChart 
+              <ChartCard title="喜用神与五行流变分析" icon={<Zap size={24} />}>
+                <CombinedLuckyElementsChart 
                   data={analysis.luckyUnluckyElements} 
-                  tenYearFortune={analysis.tenYearFortune}
-                />
-              </ChartCard>
-              <ChartCard title="五行喜忌流变图表" icon={<Activity size={24} />}>
-                <FiveElementsFlowChart
-                  data={analysis.luckyUnluckyElements}
                   tenYearFortune={analysis.tenYearFortune}
                 />
               </ChartCard>
