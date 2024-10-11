@@ -29,7 +29,7 @@ const fetchDestinyAnalysis = async (birthInfo: { date: string; city: string; gen
     likeAndDislike: `⚖️ 喜忌格局：
       喜用神：金、水 🌊
       忌神：火、土 🔥
-      平衡建议：多接触水属性事物 ��`,
+      平衡建议：多接触水属性事物 `,
     careerDevelopment: `💼 事业发展：
       优势：创新能力强，领导才能突出 🚀
       挑战：需要提高耐心和细节把控 🔺
