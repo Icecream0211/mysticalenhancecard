@@ -433,60 +433,72 @@ const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
 
 const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data, tenYearFortune }) => {
   const COLORS = {
-    lucky: '#4CAF50',
-    unlucky: '#FF5722',
-  };
-
-  const ICONS = {
-    木: '🌳',
-    火: '🔥',
-    土: '🏔️',
-    金: '🏅',
-    水: '💧',
+    木: '#4CAF50',
+    火: '#FF5722',
+    土: '#FFC107',
+    金: '#9E9E9E',
+    水: '#2196F3',
   };
 
   const fortunePeriods = tenYearFortune.split('\n').filter(Boolean);
 
+  // Process the data to include fortune periods
+  const processedData = data.flatMap((item: LuckyUnluckyElement) =>
+    fortunePeriods.map((period, index) => ({
+      ...item,
+      period: period.split('：')[0],
+      yearRange: period.split('：')[1].split('岁')[0],
+      value: item.value / fortunePeriods.length, // Distribute the value across periods
+    }))
+  );
+
   return (
     <div>
-      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>喜用神与大运结合分析</h3>
+      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>喜用神与大运阶段分布</h3>
       <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={data} layout="vertical">
+        <BarChart
+          data={processedData}
+          layout="vertical"
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis type="number" />
-          <YAxis dataKey="name" type="category" />
+          <YAxis dataKey="period" type="category" />
           <Tooltip
             contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
             labelStyle={{ color: '#ffffff' }}
             itemStyle={{ color: '#ffffff' }}
             formatter={(value, name, props) => [
-              `${props.payload.name}: ${value}`,
+              `${props.payload.name}: ${(value * fortunePeriods.length).toFixed(2)}`,
               `类型: ${props.payload.type === 'lucky' ? '喜用神' : '忌用神'}`,
-              fortunePeriods[props.index] || '',
+              `${props.payload.period}: ${props.payload.yearRange}岁`,
             ]}
           />
           <Legend />
           <Bar dataKey="value" fill="#8884d8">
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[entry.type]} />
+            {processedData.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[entry.name as keyof typeof COLORS]}
+                fillOpacity={entry.type === 'lucky' ? 0.8 : 0.4}
+              />
             ))}
           </Bar>
-          {fortunePeriods.map((period, index) => (
-            <ReferenceLine
-              key={`line-${index}`}
-              x={index * (100 / fortunePeriods.length)}
-              stroke="#fff"
-              label={{ value: period.split('：')[0], fill: '#fff', position: 'insideTopRight' }}
-            />
-          ))}
         </BarChart>
       </ResponsiveContainer>
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
-        <span style={{ color: COLORS.lucky, marginRight: '10px' }}>■ 喜用神</span>
-        <span style={{ color: COLORS.unlucky }}>■ 忌用神</span>
+      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+        {Object.entries(COLORS).map(([element, color]) => (
+          <span key={element} style={{ margin: '0 10px' }}>
+            <span style={{ color, marginRight: '5px' }}>■</span>
+            {element}:
+            <span style={{ backgroundColor: color, opacity: 0.8, padding: '2px 5px', marginLeft: '5px' }}>喜用神</span>
+            <span style={{ backgroundColor: color, opacity: 0.4, padding: '2px 5px', marginLeft: '5px' }}>忌用神</span>
+          </span>
+        ))}
       </div>
       <p style={{ textAlign: 'center', marginTop: '20px' }}>
         此图表展示了喜用神与忌用神在不同大运阶段的分布情况，帮助您理解各阶段的运势特点。
+        深色表示喜用神，浅色表示忌用神。鼠标悬停可查看详细信息。
       </p>
     </div>
   );
@@ -546,6 +558,101 @@ const DirectionColorPairingChart: React.FC<ChartProps> = ({ data }) => {
             ■ {direction}: {color} ({ICONS[direction as DirectionColor['direction']]})
           </span>
         ))}
+      </div>
+    </div>
+  );
+};
+
+type FiveElementsFlowChartProps = {
+  data: LuckyUnluckyElement[];
+  tenYearFortune: string;
+};
+
+const FiveElementsFlowChart: React.FC<FiveElementsFlowChartProps> = ({ data, tenYearFortune }) => {
+  const COLORS = {
+    木: '#4CAF50',
+    火: '#FF5722',
+    土: '#FFC107',
+    金: '#9E9E9E',
+    水: '#2196F3',
+  };
+
+  const fortunePeriods = tenYearFortune.split('\n').filter(Boolean);
+
+  const processedData = data.map(item => {
+    return fortunePeriods.map((period, index) => ({
+      element: item.name,
+      period: period.split('：')[0],
+      yearRange: period.split('：')[1].split('岁')[0],
+      value: item.value / fortunePeriods.length,
+      type: item.type,
+    }));
+  }).flat();
+
+  const elements = ['木', '火', '土', '金', '水'];
+
+  return (
+    <div>
+      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>五行喜忌流变图表</h3>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around' }}>
+        {elements.map(element => (
+          <div key={element} style={{ width: '45%', marginBottom: '20px' }}>
+            <h4 style={{ textAlign: 'center', color: COLORS[element as keyof typeof COLORS] }}>{element}元素流变</h4>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={processedData.filter(item => item.element === element)}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 'dataMax']} />
+                <YAxis dataKey="period" type="category" />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+                  labelStyle={{ color: '#ffffff' }}
+                  itemStyle={{ color: '#ffffff' }}
+                  formatter={(value, name, props) => [
+                    `${props.payload.period}: ${props.payload.yearRange}岁`,
+                    `${element}元素: ${(value * fortunePeriods.length).toFixed(2)}`,
+                    `类型: ${props.payload.type === 'lucky' ? '喜用神' : '忌用神'}`,
+                  ]}
+                />
+                <Bar dataKey="value">
+                  {processedData.filter(item => item.element === element).map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.type === 'lucky' ? COLORS[element as keyof typeof COLORS] : '#FF0000'}
+                      fillOpacity={0.8}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: '20px', padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '10px' }}>
+        <h4 style={{ textAlign: 'center' }}>整体分析</h4>
+        <p>
+          根据五行喜忌流变图表，我们可以看出各大运阶段的主要特点：
+          {fortunePeriods.map((period, index) => (
+            <span
+              key={index}
+              style={{ display: 'block', marginTop: '10px', cursor: 'pointer' }}
+              title={`点击查看${period}的详细分析`}
+              onClick={() => alert(`这里将显示${period}的详细分析内容`)}
+            >
+              • {period}：
+              {elements.map(element => {
+                const elementData = processedData.find(item => item.element === element && item.period === period.split('：')[0]);
+                return elementData ? `${element}${elementData.type === 'lucky' ? '旺' : '弱'} ` : '';
+              })}
+            </span>
+          ))}
+        </p>
+        <p style={{ marginTop: '20px', fontStyle: 'italic' }}>
+          提示：将鼠标悬停在各个时期上，可以查看更详细的分析内容。
+        </p>
       </div>
     </div>
   );
@@ -778,6 +885,12 @@ export function EnhancedMysticalDestinyAppWithCharts() {
               <ChartCard title="五行平衡雷达图" icon={<Compass size={24} />}>
                 <FiveElementsRadarChart data={analysis.fiveElements} />
                 <p style={{ textAlign: 'center', marginTop: '10px' }}>此雷达图展示了您八字中五行元素的强弱平衡情况。</p>
+              </ChartCard>
+              <ChartCard title="五行喜忌流变图表" icon={<Activity size={24} />}>
+                <FiveElementsFlowChart
+                  data={analysis.luckyUnluckyElements}
+                  tenYearFortune={analysis.tenYearFortune}
+                />
               </ChartCard>
               <ChartCard title="方位与颜色配对图" icon={<Compass size={24} />}>
                 <DirectionColorPairingChart data={analysis.directionColors} />
