@@ -15,6 +15,8 @@ import {
 import { Text, ReferenceLine } from 'recharts';
 import { scaleSequential } from 'd3-scale';
 import { interpolateBlues } from 'd3-scale-chromatic';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./ui/accordion";
+
 // Simulated API call
 const fetchDestinyAnalysis = async (birthInfo: { date: string; city: string; gender: string }) => {
   // Simulate API delay
@@ -498,7 +500,7 @@ const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data, tenYearFortune 
       </div>
       <p style={{ textAlign: 'center', marginTop: '20px' }}>
         此图表展示了喜用神与忌用神在不同大运阶段的分布情况，帮助您理解各阶段的运势特点。
-        深色表示喜用神，浅色表示忌用神。鼠标悬停可查看详细信息。
+        深色表示喜用神，浅色表示���用神。鼠标悬停可查看详细信息。
       </p>
     </div>
   );
@@ -594,43 +596,47 @@ const FiveElementsFlowChart: React.FC<FiveElementsFlowChartProps> = ({ data, ten
   return (
     <div>
       <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>五行喜忌流变图表</h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around' }}>
+      <Accordion type="single" collapsible>
         {elements.map(element => (
-          <div key={element} style={{ width: '45%', marginBottom: '20px' }}>
-            <h4 style={{ textAlign: 'center', color: COLORS[element as keyof typeof COLORS] }}>{element}元素流变</h4>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={processedData.filter(item => item.element === element)}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 'dataMax']} />
-                <YAxis dataKey="period" type="category" />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
-                  labelStyle={{ color: '#ffffff' }}
-                  itemStyle={{ color: '#ffffff' }}
-                  formatter={(value, name, props) => [
-                    `${props.payload.period}: ${props.payload.yearRange}岁`,
-                    `${element}元素: ${(value * fortunePeriods.length).toFixed(2)}`,
-                    `类型: ${props.payload.type === 'lucky' ? '喜用神' : '忌用神'}`,
-                  ]}
-                />
-                <Bar dataKey="value">
-                  {processedData.filter(item => item.element === element).map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.type === 'lucky' ? COLORS[element as keyof typeof COLORS] : '#FF0000'}
-                      fillOpacity={0.8}
+          <AccordionItem key={element} value={element}>
+            <AccordionTrigger>{element}元素流变</AccordionTrigger>
+            <AccordionContent>
+              <div style={{ width: '100%', height: '300px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={processedData.filter(item => item.element === element)}
+                    layout="vertical"
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" domain={[0, 'dataMax']} />
+                    <YAxis dataKey="period" type="category" />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+                      labelStyle={{ color: '#ffffff' }}
+                      itemStyle={{ color: '#ffffff' }}
+                      formatter={(value, name, props) => [
+                        `${props.payload.period}: ${props.payload.yearRange}岁`,
+                        `${element}元素: ${(value * fortunePeriods.length).toFixed(2)}`,
+                        `类型: ${props.payload.type === 'lucky' ? '喜用神' : '忌用神'}`,
+                      ]}
                     />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+                    <Bar dataKey="value">
+                      {processedData.filter(item => item.element === element).map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.type === 'lucky' ? COLORS[element as keyof typeof COLORS] : '#FF0000'}
+                          fillOpacity={0.8}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
       <div style={{ marginTop: '20px', padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '10px' }}>
         <h4 style={{ textAlign: 'center' }}>整体分析</h4>
         <p>
@@ -651,7 +657,7 @@ const FiveElementsFlowChart: React.FC<FiveElementsFlowChartProps> = ({ data, ten
           ))}
         </p>
         <p style={{ marginTop: '20px', fontStyle: 'italic' }}>
-          提示：将鼠标悬停在各个时期上，可以查看更详细的分析内容。
+          提示：点击各个元素标题可以展开查看详细图表，将鼠标悬停在各个时期上，可以查看更详细的分析内容。
         </p>
       </div>
     </div>
@@ -838,7 +844,7 @@ export function EnhancedMysticalDestinyAppWithCharts() {
             <NavTab label="命盘概览" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
             <NavTab label="运势预测" active={activeTab === 'forecast'} onClick={() => setActiveTab('forecast')} />
             <NavTab label="五行分析" active={activeTab === 'fiveElements'} onClick={() => setActiveTab('fiveElements')} />
-            <NavTab label="喜用神分布" active={activeTab === 'luckyElements'} onClick={() => setActiveTab('luckyElements')} />
+            <NavTab label="喜用神分析" active={activeTab === 'luckyElements'} onClick={() => setActiveTab('luckyElements')} />
           </div>
           {activeTab === 'overview' && (
             <>
@@ -894,17 +900,33 @@ export function EnhancedMysticalDestinyAppWithCharts() {
               </ChartCard>
               <ChartCard title="方位与颜色配对图" icon={<Compass size={24} />}>
                 <DirectionColorPairingChart data={analysis.directionColors} />
-                <p style={{ textAlign: 'center', marginTop: '10px' }}>此饼图展示了不同方位及其对应的幸运颜色。</p>
+                <p style={{ textAlign: 'center', marginTop: '10px' }}>此图展示了不同方位及其对应的幸运颜色。</p>
               </ChartCard>
             </>
           )}
           {activeTab === 'luckyElements' && (
-            <ChartCard title="喜用神与忌用神分布图" icon={<Zap size={24} />}>
-              <LuckyUnluckyElementsChart 
-                data={analysis.luckyUnluckyElements} 
-                tenYearFortune={analysis.tenYearFortune}
-              />
-            </ChartCard>
+            <>
+              <ChartCard title="喜用神与大运阶段分布" icon={<Zap size={24} />}>
+                <LuckyUnluckyElementsChart 
+                  data={analysis.luckyUnluckyElements} 
+                  tenYearFortune={analysis.tenYearFortune}
+                />
+              </ChartCard>
+              <ChartCard title="五行喜忌流变图表" icon={<Activity size={24} />}>
+                <FiveElementsFlowChart
+                  data={analysis.luckyUnluckyElements}
+                  tenYearFortune={analysis.tenYearFortune}
+                />
+              </ChartCard>
+              <ChartCard title="喜用神强度分析" icon={<TrendingUp size={24} />}>
+                {/* Add a new chart component for Lucky Elements Strength Analysis */}
+                <p>此处将展示喜用神强度分析图表</p>
+              </ChartCard>
+              <ChartCard title="喜用神与生肖关系" icon={<Activity size={24} />}>
+                {/* Add a new chart component for Lucky Elements and Zodiac Relationship */}
+                <p>此处将展示喜用神与生肖关系图表</p>
+              </ChartCard>
+            </>
           )}
           <animated.button
             onClick={handleShare}
