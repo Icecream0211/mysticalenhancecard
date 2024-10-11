@@ -500,7 +500,7 @@ const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data, tenYearFortune 
       </div>
       <p style={{ textAlign: 'center', marginTop: '20px' }}>
         此图表展示了喜用神与忌用神在不同大运阶段的分布情况，帮助您理解各阶段的运势特点。
-        深色表示喜用神，浅色表示���用神。鼠标悬停可查看详细信息。
+        深色表示喜用神，浅色表示忌用神。鼠标悬停可查看详细信息。
       </p>
     </div>
   );
@@ -586,7 +586,7 @@ const FiveElementsFlowChart: React.FC<FiveElementsFlowChartProps> = ({ data, ten
       element: item.name,
       period: period.split('：')[0],
       yearRange: period.split('：')[1].split('岁')[0],
-      value: item.value / fortunePeriods.length,
+      value: item.value * (Math.random() * 0.5 + 0.75), // 模拟能量变化
       type: item.type,
     }));
   }).flat();
@@ -617,7 +617,7 @@ const FiveElementsFlowChart: React.FC<FiveElementsFlowChartProps> = ({ data, ten
                       itemStyle={{ color: '#ffffff' }}
                       formatter={(value, name, props) => [
                         `${props.payload.period}: ${props.payload.yearRange}岁`,
-                        `${element}元素: ${(value * fortunePeriods.length).toFixed(2)}`,
+                        `${element}元素: ${value.toFixed(2)}`,
                         `类型: ${props.payload.type === 'lucky' ? '喜用神' : '忌用神'}`,
                       ]}
                     />
@@ -891,12 +891,6 @@ export function EnhancedMysticalDestinyAppWithCharts() {
               <ChartCard title="五行平衡雷达图" icon={<Compass size={24} />}>
                 <FiveElementsRadarChart data={analysis.fiveElements} />
                 <p style={{ textAlign: 'center', marginTop: '10px' }}>此雷达图展示了您八字中五行元素的强弱平衡情况。</p>
-              </ChartCard>
-              <ChartCard title="五行喜忌流变图表" icon={<Activity size={24} />}>
-                <FiveElementsFlowChart
-                  data={analysis.luckyUnluckyElements}
-                  tenYearFortune={analysis.tenYearFortune}
-                />
               </ChartCard>
               <ChartCard title="方位与颜色配对图" icon={<Compass size={24} />}>
                 <DirectionColorPairingChart data={analysis.directionColors} />
