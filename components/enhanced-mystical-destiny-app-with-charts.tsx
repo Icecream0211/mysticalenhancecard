@@ -9,7 +9,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
   ScatterChart, Scatter, ZAxis,
   BarChart, Bar, Cell,
-  PieChart, Pie,
+  PieChart, Pie, ResponsiveContainer, Label
 } from 'recharts';
 
 import { Text, ReferenceLine } from 'recharts';
@@ -366,13 +366,14 @@ const ThreeYearsForecastChart: React.FC<ChartProps> = ({ data }) => {
 };
 
 const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
-  const years = Array.from(new Set(data.map((item: any) => item.year)));
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear + i);
+  const scores = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   const formattedData = years.flatMap(year =>
-    months.map(month => {
-      const matchingData = data.find((item: any) => item.year === year && item.month === month);
-      return { year, month, score: matchingData ? matchingData.score : 0 };
+    scores.map(score => {
+      const matchingData = data.find((item: any) => item.year === year && item.score === score);
+      return { year, score, value: matchingData ? matchingData.value : 0 };
     })
   );
 
@@ -380,33 +381,54 @@ const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
 
   return (
     <div>
-      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>未来三年每月运势强弱变化趋势</h3>
-      <ScatterChart width={500} height={300} margin={{ top: 20, right: 20, bottom: 20, left: 20 }} style={{ margin: 'auto' }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-        <XAxis type="number" dataKey="month" name="月份" unit="月" stroke="#ffffff" />
-        <YAxis type="number" dataKey="year" name="年份" unit="年" stroke="#ffffff" />
-        <ZAxis type="number" dataKey="score" range={[0, 500]} name="运势评分" unit="分" />
-        <Tooltip
-          cursor={{ strokeDasharray: '3 3' }}
-          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
-          labelStyle={{ color: '#ffffff' }}
-          itemStyle={{ color: '#ffffff' }}
-          formatter={(value: any, name: string) => [value, name === 'score' ? '运势评分' : name]}
-        />
-        <Scatter
-          name="运势热力图"
-          data={formattedData}
-          fill="#8884d8"
-          shape="rect"
-        >
-          {formattedData.map((entry: any, index: number) => (
-            <Cell
-              key={`cell-${index}`}
-              fill={colorScale(entry.score)}
-            />
-          ))}
-        </Scatter>
-      </ScatterChart>
+      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>未来十年运势强弱变化趋势</h3>
+      <ResponsiveContainer width="100%" height={400}>
+        <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 60 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+          <XAxis
+            type="category"
+            dataKey="year"
+            name="年份"
+            allowDuplicatedCategory={false}
+            tick={{ fill: '#ffffff' }}
+          />
+          <YAxis
+            type="number"
+            dataKey="score"
+            name="运势指数"
+            domain={[0, 10]}
+            tick={{ fill: '#ffffff' }}
+            label={{ value: '运势强弱评分', angle: -90, position: 'insideLeft', fill: '#ffffff' }}
+          />
+          <ZAxis type="number" dataKey="value" range={[0, 500]} />
+          <Tooltip
+            cursor={{ strokeDasharray: '3 3' }}
+            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+            labelStyle={{ color: '#ffffff' }}
+            itemStyle={{ color: '#ffffff' }}
+            formatter={(value: any, name: string, props: any) => [
+              `${props.payload.year}年`,
+              `运势指数: ${props.payload.score}`,
+              `整体运势: ${value}分`,
+              `财运: ${Math.round(value * 0.8)}分`,
+              `健康: ${Math.round(value * 1.2)}分`,
+            ]}
+          />
+          <Scatter
+            name="运势热力图"
+            data={formattedData}
+            fill="#8884d8"
+            shape="rect"
+          >
+            {formattedData.map((entry: any, index: number) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={colorScale(entry.score)}
+              />
+            ))}
+          </Scatter>
+        </ScatterChart>
+      </ResponsiveContainer>
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
         <span>运势强弱：</span>
         <span style={{ background: 'linear-gradient(to right, #f7fbff, #08306b)', width: '100px', height: '20px', marginLeft: '10px' }}></span>
@@ -472,35 +494,84 @@ const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data }) => {
 
 const DirectionColorPairingChart: React.FC<ChartProps> = ({ data }) => {
   const COLORS: Record<DirectionColor['direction'], string> = {
-    东: '#4CAF50',
-    南: '#FF5722',
-    西: '#FFFFFF',
-    北: '#000000',
-    中: '#FFC107',
+    东: '#FF5722',
+    南: '#FFC107',
+    西: '#4CAF50',
+    北: '#2196F3',
+    中: '#9C27B0',
+  };
+
+  const ICONS: Record<DirectionColor['direction'], string> = {
+    东: '→',
+    南: '↓',
+    西: '←',
+    北: '↑',
+    中: '⊙',
+  };
+
+  const ELEMENT_ICONS: Record<DirectionColor['direction'], string> = {
+    东: '🔥',
+    南: '🌞',
+    西: '🌳',
+    北: '💧',
+    中: '🏔️',
   };
 
   return (
-    <PieChart width={400} height={400} style={{ margin: 'auto' }}>
-      <Pie
-        data={data}
-        cx={200}
-        cy={200}
-        innerRadius={60}
-        outerRadius={80}
-        fill="#8884d8"
-        paddingAngle={5}
-        dataKey="value"
-      >
-        {(data as DirectionColor[]).map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={COLORS[entry.direction]} />
+    <div>
+      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>方位与幸运颜色配对图</h3>
+      <ResponsiveContainer width="100%" height={400}>
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={80}
+            fill="#8884d8"
+            paddingAngle={5}
+            dataKey="value"
+          >
+            {(data as DirectionColor[]).map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[entry.direction]} />
+            ))}
+            {(data as DirectionColor[]).map((entry, index) => (
+              <Label
+                key={`label-${index}`}
+                position="center"
+                content={({ viewBox: { cx, cy } }) => (
+                  <text
+                    x={cx + Math.cos(index * Math.PI / 2.5 - Math.PI / 2) * 70}
+                    y={cy + Math.sin(index * Math.PI / 2.5 - Math.PI / 2) * 70}
+                    fill="#ffffff"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                  >
+                    {ICONS[entry.direction]} {entry.direction} {ELEMENT_ICONS[entry.direction]}
+                  </text>
+                )}
+              />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+            labelStyle={{ color: '#ffffff' }}
+            itemStyle={{ color: '#ffffff' }}
+            formatter={(value: any, name: string, props: any) => [
+              `${props.payload.direction}: ${props.payload.color}`,
+              props.payload.meaning,
+            ]}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+        {Object.entries(COLORS).map(([direction, color]) => (
+          <span key={direction} style={{ margin: '0 10px', color }}>
+            ■ {direction}: {color} ({ELEMENT_ICONS[direction as keyof typeof ELEMENT_ICONS]})
+          </span>
         ))}
-      </Pie>
-      <Tooltip
-        contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
-        labelStyle={{ color: '#ffffff' }}
-        itemStyle={{ color: '#ffffff' }}
-      />
-    </PieChart>
+      </div>
+    </div>
   );
 };
 
@@ -696,7 +767,7 @@ export function EnhancedMysticalDestinyAppWithCharts() {
                   style={{ background: 'linear-gradient(135deg, #E6D9B8, #D4AF37)' }}
                 />
               </ChartCard>
-              <ChartCard title="���运解析" icon={<TrendingUp size={24} />}>
+              <ChartCard title="运解析" icon={<TrendingUp size={24} />}>
                 <AnalysisCard
                   title="大运解析"
                   content={analysis.tenYearFortune}
