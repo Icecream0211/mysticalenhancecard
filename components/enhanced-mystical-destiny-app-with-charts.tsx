@@ -212,7 +212,73 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ title, content, emoji, styl
   );
 };
 
-// 修改其他图表组件的定义
+type LuckyUnluckyElement = {
+  name: string;
+  value: number;
+  type: 'lucky' | 'unlucky';
+};
+
+type DirectionColor = {
+  direction: '东' | '南' | '西' | '北' | '中';
+  color: string;
+  meaning: string;
+  value: number;
+};
+
+const ChartCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef(null);
+
+  const cardAnimation = useSpring({
+    opacity: isVisible ? 1 : 0,
+    transform: isVisible ? 'translateY(0px)' : 'translateY(50px)',
+    config: config.wobbly,
+  });
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <animated.div ref={cardRef} style={{
+      ...cardAnimation,
+      background: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: '12px',
+      padding: '20px',
+      marginBottom: '25px',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    }}>
+      <h3 style={{
+        fontSize: '24px',
+        marginBottom: '15px',
+        color: '#ffffff',
+        textShadow: '0px 1px 2px rgba(0, 0, 0, 0.5)',
+      }}>
+        {title}
+      </h3>
+      {children}
+    </animated.div>
+  );
+};
+
 const FiveElementsRadarChart: React.FC<ChartProps> = ({ data }) => {
   const COLORS = {
     木: '#4CAF50',
@@ -223,23 +289,16 @@ const FiveElementsRadarChart: React.FC<ChartProps> = ({ data }) => {
   };
 
   return (
-    <RadarChart width={300} height={300} data={data}>
-      <PolarGrid />
-      <PolarAngleAxis dataKey="element" />
-      <PolarRadiusAxis angle={30} domain={[0, 10]} />
+    <RadarChart width={300} height={300} data={data} style={{ margin: 'auto' }}>
+      <PolarGrid stroke="rgba(255, 255, 255, 0.3)" />
+      <PolarAngleAxis dataKey="element" tick={{ fill: '#ffffff' }} />
+      <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fill: '#ffffff' }} />
       <Radar name="五行强度" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-      <Tooltip content={({ payload }) => {
-        if (payload && payload.length) {
-          const { element, value, description } = payload[0].payload;
-          return (
-            <div style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc' }}>
-              <p>{`${element}: ${value}`}</p>
-              <p>{description}</p>
-            </div>
-          );
-        }
-        return null;
-      }} />
+      <Tooltip
+        contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+        labelStyle={{ color: '#ffffff' }}
+        itemStyle={{ color: '#ffffff' }}
+      />
     </RadarChart>
   );
 };
@@ -247,30 +306,51 @@ const FiveElementsRadarChart: React.FC<ChartProps> = ({ data }) => {
 const ThreeYearsForecastChart: React.FC<ChartProps> = ({ data }) => {
   const [activeType, setActiveType] = useState('overall');
 
+  const gradientOffset = () => {
+    const dataMax = Math.max(...data.map((i) => i[activeType]));
+    const dataMin = Math.min(...data.map((i) => i[activeType]));
+    
+    if (dataMax <= 0) {
+      return 0;
+    }
+    if (dataMin >= 0) {
+      return 1;
+    }
+    
+    return dataMax / (dataMax - dataMin);
+  };
+
   return (
     <div>
-      <LineChart width={500} height={300} data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="year" />
-        <YAxis domain={[0, 10]} />
-        <Tooltip />
+      <LineChart width={500} height={300} data={data} style={{ margin: 'auto' }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+        <XAxis dataKey="year" stroke="#ffffff" />
+        <YAxis domain={[0, 10]} stroke="#ffffff" />
+        <Tooltip
+          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+          labelStyle={{ color: '#ffffff' }}
+          itemStyle={{ color: '#ffffff' }}
+        />
         <Legend />
-        <Line type="monotone" dataKey={activeType} stroke="#8884d8" activeDot={{ r: 8 }} />
+        <defs>
+          <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
+            <stop offset={gradientOffset()} stopColor="#82ca9d" stopOpacity={1} />
+            <stop offset={gradientOffset()} stopColor="#8884d8" stopOpacity={1} />
+          </linearGradient>
+        </defs>
+        <Line type="monotone" dataKey={activeType} stroke="url(#splitColor)" strokeWidth={2} dot={{ r: 6 }} activeDot={{ r: 8 }} />
       </LineChart>
-      <div>
-        <button onClick={() => setActiveType('overall')}>整体运势</button>
-        <button onClick={() => setActiveType('wealth')}>财运</button>
-        <button onClick={() => setActiveType('health')}>健康</button>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+        <button onClick={() => setActiveType('overall')} style={{ marginRight: '10px' }}>整体运势</button>
+        <button onClick={() => setActiveType('wealth')} style={{ marginRight: '10px' }}>财运</button>
+        <button onClick={() => setActiveType('health')} style={{ marginRight: '10px' }}>健康</button>
         <button onClick={() => setActiveType('love')}>情感</button>
       </div>
     </div>
   );
 };
 
-
-
 const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
-  // 修复 Set 类型错误
   const years = Array.from(new Set(data.map((item: any) => item.year)));
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -282,13 +362,25 @@ const FortuneHeatMap: React.FC<ChartProps> = ({ data }) => {
   );
 
   return (
-    <ScatterChart width={500} height={300} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-      <CartesianGrid />
-      <XAxis type="number" dataKey="month" name="月份" unit="月" />
-      <YAxis type="number" dataKey="year" name="年份" unit="年" />
+    <ScatterChart width={500} height={300} margin={{ top: 20, right: 20, bottom: 20, left: 20 }} style={{ margin: 'auto' }}>
+      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+      <XAxis type="number" dataKey="month" name="月份" unit="月" stroke="#ffffff" />
+      <YAxis type="number" dataKey="year" name="年份" unit="年" stroke="#ffffff" />
       <ZAxis type="number" dataKey="score" range={[0, 500]} name="运势评分" unit="分" />
-      <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-      <Scatter name="运势热力图" data={formattedData} fill="#8884d8" />
+      <Tooltip
+        cursor={{ strokeDasharray: '3 3' }}
+        contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+        labelStyle={{ color: '#ffffff' }}
+        itemStyle={{ color: '#ffffff' }}
+      />
+      <Scatter
+        name="运势热力图"
+        data={formattedData}
+        fill="#8884d8"
+        shape="rect"
+        width={30}
+        height={30}
+      />
     </ScatterChart>
   );
 };
@@ -301,28 +393,32 @@ const LuckyUnluckyElementsChart: React.FC<ChartProps> = ({ data }) => {
 
   return (
     <div>
-      <BarChart width={500} height={300} data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
+      <BarChart width={500} height={300} data={data} style={{ margin: 'auto' }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+        <XAxis dataKey="name" stroke="#ffffff" />
+        <YAxis stroke="#ffffff" />
+        <Tooltip
+          contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+          labelStyle={{ color: '#ffffff' }}
+          itemStyle={{ color: '#ffffff' }}
+        />
         <Legend />
         <Bar dataKey="value" fill="#8884d8">
-          {data.map((entry, index) => (
+          {(data as LuckyUnluckyElement[]).map((entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[entry.type]} />
           ))}
         </Bar>
       </BarChart>
-      <div>
-        <span style={{ color: COLORS.lucky }}>■</span> 喜用神
-        <span style={{ color: COLORS.unlucky, marginLeft: '10px' }}>■</span> 忌用神
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+        <span style={{ color: COLORS.lucky, marginRight: '10px' }}>■ 喜用神</span>
+        <span style={{ color: COLORS.unlucky }}>■ 忌用神</span>
       </div>
     </div>
   );
 };
 
 const DirectionColorPairingChart: React.FC<ChartProps> = ({ data }) => {
-  const COLORS = {
+  const COLORS: Record<DirectionColor['direction'], string> = {
     东: '#4CAF50',
     南: '#FF5722',
     西: '#FFFFFF',
@@ -331,7 +427,7 @@ const DirectionColorPairingChart: React.FC<ChartProps> = ({ data }) => {
   };
 
   return (
-    <PieChart width={400} height={400}>
+    <PieChart width={400} height={400} style={{ margin: 'auto' }}>
       <Pie
         data={data}
         cx={200}
@@ -342,23 +438,14 @@ const DirectionColorPairingChart: React.FC<ChartProps> = ({ data }) => {
         paddingAngle={5}
         dataKey="value"
       >
-        {data.map((entry, index) => (
+        {(data as DirectionColor[]).map((entry, index) => (
           <Cell key={`cell-${index}`} fill={COLORS[entry.direction]} />
         ))}
       </Pie>
       <Tooltip
-        content={({ payload }) => {
-          if (payload && payload.length) {
-            const { direction, color, meaning } = payload[0].payload;
-            return (
-              <div style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc' }}>
-                <p>{`${direction}: ${color}`}</p>
-                <p>{meaning}</p>
-              </div>
-            );
-          }
-          return null;
-        }}
+        contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: 'none' }}
+        labelStyle={{ color: '#ffffff' }}
+        itemStyle={{ color: '#ffffff' }}
       />
     </PieChart>
   );
@@ -538,7 +625,7 @@ export function EnhancedMysticalDestinyAppWithCharts() {
       )}
       {analysis && (
         <div ref={resultsRef} style={{ marginTop: '2rem', width: '100%', maxWidth: '800px' }}>
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
             <button onClick={() => setActiveTab('overview')} style={{ marginRight: '10px' }}>命盘概览</button>
             <button onClick={() => setActiveTab('forecast')} style={{ marginRight: '10px' }}>运势预测</button>
             <button onClick={() => setActiveTab('fiveElements')} style={{ marginRight: '10px' }}>五行分析</button>
@@ -568,28 +655,33 @@ export function EnhancedMysticalDestinyAppWithCharts() {
           )}
           {activeTab === 'forecast' && (
             <>
-              <ChartSection title="未来三年运势预测">
+              <ChartCard title="未来三年运势预测">
                 <ThreeYearsForecastChart data={analysis.threeYearsForecast} />
-              </ChartSection>
-              <ChartSection title="运势热力图">
+                <p style={{ textAlign: 'center', marginTop: '10px' }}>此图展示了未来三年在不同方面的运势变化趋势。</p>
+              </ChartCard>
+              <ChartCard title="运势热力图">
                 <FortuneHeatMap data={analysis.monthlyFortune} />
-              </ChartSection>
+                <p style={{ textAlign: 'center', marginTop: '10px' }}>此热力图展示了未来三年每月的运势强弱变化。</p>
+              </ChartCard>
             </>
           )}
           {activeTab === 'fiveElements' && (
             <>
-              <ChartSection title="五行平衡雷达图">
+              <ChartCard title="五行平衡雷达图">
                 <FiveElementsRadarChart data={analysis.fiveElements} />
-              </ChartSection>
-              <ChartSection title="方位与颜色配对图">
+                <p style={{ textAlign: 'center', marginTop: '10px' }}>此雷达图展示了您八字中五行元素的强弱平衡情况。</p>
+              </ChartCard>
+              <ChartCard title="方位与颜色配对图">
                 <DirectionColorPairingChart data={analysis.directionColors} />
-              </ChartSection>
+                <p style={{ textAlign: 'center', marginTop: '10px' }}>此饼图展示了不同方位及其对应的幸运颜色。</p>
+              </ChartCard>
             </>
           )}
           {activeTab === 'luckyElements' && (
-            <ChartSection title="喜用神与忌用神分布图">
+            <ChartCard title="喜用神与忌用神分布图">
               <LuckyUnluckyElementsChart data={analysis.luckyUnluckyElements} />
-            </ChartSection>
+              <p style={{ textAlign: 'center', marginTop: '10px' }}>此柱状图展示了对您有利和不利的五行元素分布。</p>
+            </ChartCard>
           )}
           <animated.button
             onClick={handleShare}
