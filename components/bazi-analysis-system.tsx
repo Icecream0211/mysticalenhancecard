@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import axios from 'axios'
+import html2canvas from 'html2canvas'
 
 interface UserInput {
   year: string
@@ -85,6 +86,7 @@ export function BaziAnalysisSystem() {
   const [selectedDaYun, setSelectedDaYun] = useState<DaYun | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [analysisResult, setAnalysisResult] = useState<BaziAnalysisResult | null>(null);
+  const resultRef = useRef<HTMLDivElement>(null)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -133,6 +135,17 @@ export function BaziAnalysisSystem() {
       scrollRef.current.scrollTo({ left: scrollLeft, behavior: 'smooth' });
     }
   };
+
+  const saveAsImage = async () => {
+    if (resultRef.current) {
+      const canvas = await html2canvas(resultRef.current)
+      const image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream")
+      const link = document.createElement('a')
+      link.download = 'bazi-analysis-result.png'
+      link.href = image
+      link.click()
+    }
+  }
 
   if (step === 1) {
     return (
@@ -195,12 +208,12 @@ export function BaziAnalysisSystem() {
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
       <div className="relative py-3 sm:max-w-5xl sm:mx-auto w-full px-4 sm:px-0">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
-        <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
+        <div ref={resultRef} className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
           <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">八字分析结果</h1>
           
           {/* 基本信息 */}
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-700">基本信息</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-gray-700">��本信息</h2>
             <div className="grid grid-cols-2 gap-4">
               <div><span className="font-medium">公历日期：</span>{analysisResult?.solar_date}</div>
               <div><span className="font-medium">农历日期：</span>{analysisResult?.lunar_date}</div>
@@ -380,6 +393,19 @@ export function BaziAnalysisSystem() {
               </button>
             </div>
           </section>
+
+          {/* 在最后添加保存/分享按钮 */}
+          <div className="mt-8 text-center">
+            <Button 
+              onClick={saveAsImage} 
+              className="px-6 py-2 rounded text-white font-semibold
+                         bg-gradient-to-r from-cyan-400 to-light-blue-500
+                         hover:from-cyan-500 hover:to-light-blue-600
+                         transition-colors duration-300"
+            >
+              保存/分享
+            </Button>
+          </div>
         </div>
       </div>
     </div>
