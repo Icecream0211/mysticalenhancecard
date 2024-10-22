@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, MessageSquareIcon } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import axios from 'axios'
 import html2canvas from 'html2canvas'
+import { useRouter } from 'next/navigation'
 
 interface UserInput {
   year: string
@@ -72,6 +73,7 @@ interface BaziAnalysisResult {
 }
 
 export function BaziAnalysisSystem() {
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [userInput, setUserInput] = useState<UserInput>({
     year: '',
@@ -87,6 +89,8 @@ export function BaziAnalysisSystem() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [analysisResult, setAnalysisResult] = useState<BaziAnalysisResult | null>(null);
   const resultRef = useRef<HTMLDivElement>(null)
+  const [activeAnalysis, setActiveAnalysis] = useState<string | null>(null);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<string>('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -145,6 +149,29 @@ export function BaziAnalysisSystem() {
       link.href = image
       link.click()
     }
+  }
+
+  // 在基本信息部分，我们可以添加一个简单的解码函数来处理可能的乱码
+  const decodeText = (text: string | undefined): string => {
+    if (!text) return '';
+    try {
+      return decodeURIComponent(escape(text));
+    } catch (e) {
+      console.error('Decoding failed', e);
+      return text; // 如果解码失败，返回原始文本
+    }
+  };
+
+  const handleAiAnalysis = (type: string) => {
+    setActiveAnalysis(type);
+    // 这里是模拟的 AI 分析结果，实际使用时需要调用真实的 API
+    setAiAnalysisResult(`这是 ${type} 的 AI 分析结果。实际使用时，这里将显示从 API 获取的真实数据。`);
+  };
+
+  const handleDetailedAnalysis = () => {
+    // 这里我们假设详细分析页面的路由是 '/detailed-analysis'
+    // 您可以根据实际情况调整路由
+    router.push('/detailed-analysis')
   }
 
   if (step === 1) {
@@ -206,6 +233,16 @@ export function BaziAnalysisSystem() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+      {/* Add this fixed button at the top */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          onClick={() => {/* Handle AI analysis */}}
+          className="rounded-full p-3 bg-blue-500 text-white shadow-lg"
+        >
+          <MessageSquareIcon className="w-6 h-6" />
+        </Button>
+      </div>
+
       <div className="relative py-3 sm:max-w-5xl sm:mx-auto w-full px-4 sm:px-0">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
         <div ref={resultRef} className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
@@ -213,15 +250,32 @@ export function BaziAnalysisSystem() {
           
           {/* 基本信息 */}
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-700">��本信息</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-gray-700">基本信息</h2>
             <div className="grid grid-cols-2 gap-4">
-              <div><span className="font-medium">公历日期：</span>{analysisResult?.solar_date}</div>
-              <div><span className="font-medium">农历日期：</span>{analysisResult?.lunar_date}</div>
-              <div><span className="font-medium">性别：</span>{analysisResult?.gender}</div>
-              <div><span className="font-medium">历法：</span>{analysisResult?.is_solar}</div>
-              <div><span className="font-medium">是否闰月：</span>{analysisResult?.is_run_yuer}</div>
+              <div><span className="font-medium">公历日期：</span>{decodeText(analysisResult?.solar_date)}</div>
+              <div><span className="font-medium">农历日期：</span>{decodeText(analysisResult?.lunar_date)}</div>
+              <div><span className="font-medium">性别：</span>{decodeText(analysisResult?.gender)}</div>
+              <div><span className="font-medium">历法：</span>{decodeText(analysisResult?.is_solar)}</div>
+              <div><span className="font-medium">是否闰月：</span>{decodeText(analysisResult?.is_run_yuer)}</div>
             </div>
           </section>
+
+          {/* 新的详细解析按钮 */}
+          <div className="mb-8 text-center">
+            <button
+              onClick={handleDetailedAnalysis}
+              className="px-6 py-3 rounded-full text-white font-semibold
+                         bg-gradient-to-r from-blue-400 to-purple-500
+                         hover:from-blue-500 hover:to-purple-600
+                         transition-all duration-300 ease-in-out
+                         shadow-lg hover:shadow-xl
+                         transform hover:-translate-y-1
+                         relative overflow-hidden"
+            >
+              <span className="relative z-10">查看详细解析</span>
+              <span className="absolute inset-0 bg-white opacity-25 transform scale-x-0 scale-y-0 origin-center transition-transform duration-300 ease-out group-hover:scale-x-100 group-hover:scale-y-100 rounded-full"></span>
+            </button>
+          </div>
 
           {/* 八字 */}
           <section className="mb-8">
