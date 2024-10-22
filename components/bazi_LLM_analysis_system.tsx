@@ -61,7 +61,7 @@ export function BaziLLMAnalysisSystem() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12 font-['Microsoft_YaHei']">
       <div className="relative py-3 sm:max-w-5xl sm:mx-auto w-full px-4 sm:px-0">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
@@ -81,8 +81,8 @@ export function BaziLLMAnalysisSystem() {
             <div className="space-y-8">
               {analysisContent.map((section, index) => (
                 <Card key={index} className="bg-white shadow-md rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
-                  <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                    <CardTitle className="text-2xl">{section.title}</CardTitle>
+                  <CardHeader className="bg-gradient-to-r from-cyan-100 to-light-blue-100 bg-opacity-80">
+                    <CardTitle className="text-2xl font-bold text-center text-gray-800">{section.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
                     <p className="text-gray-700 whitespace-pre-line">{section.content}</p>
