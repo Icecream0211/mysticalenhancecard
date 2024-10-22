@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,7 +9,7 @@ import { ChevronLeftIcon, ChevronRightIcon, MessageSquareIcon } from 'lucide-rea
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import axios from 'axios'
 import html2canvas from 'html2canvas'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface UserInput {
   year: string
@@ -74,62 +74,41 @@ interface BaziAnalysisResult {
 
 export function BaziAnalysisSystem() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
-  const [userInput, setUserInput] = useState<UserInput>({
-    year: '',
-    month: '',
-    day: '',
-    hour: '',
-    minute: '',
-    gender: '',
-    city: ''
-  })
-  
+  const searchParams = useSearchParams()
+  const [analysisResult, setAnalysisResult] = useState<BaziAnalysisResult | null>(null);
   const [selectedDaYun, setSelectedDaYun] = useState<DaYun | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [analysisResult, setAnalysisResult] = useState<BaziAnalysisResult | null>(null);
   const resultRef = useRef<HTMLDivElement>(null)
-  const [activeAnalysis, setActiveAnalysis] = useState<string | null>(null);
-  const [aiAnalysisResult, setAiAnalysisResult] = useState<string>('');
+  const [loading, setLoading] = useState(true)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setUserInput(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleSelectChange = (name: string, value: string) => {
-    setUserInput(prev => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const formData = new FormData();
-    formData.append('year', userInput.year);
-    formData.append('month', userInput.month);
-    formData.append('day', userInput.day);
-    formData.append('hour', userInput.hour);
-    formData.append('minute', userInput.minute);
-    formData.append('gender', userInput.gender === 'male' ? '男' : '女');
-    formData.append('city', userInput.city);
-
-    try {
-      const response = await axios.post('http://127.0.0.1:8000/calculate_bazi_need/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      setLoading(true)
+      const formData = new FormData();
+      searchParams.forEach((value, key) => {
+        formData.append(key, value);
       });
-      console.log(response.data);
-      setAnalysisResult(response.data);
-      if (response.data.liunian_dayun && response.data.liunian_dayun.length > 0) {
-        setSelectedDaYun(response.data.liunian_dayun[0]);
+
+      try {
+        const response = await axios.post('http://127.0.0.1:8000/calculate_bazi_need/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setAnalysisResult(response.data);
+        if (response.data.liunian_dayun && response.data.liunian_dayun.length > 0) {
+          setSelectedDaYun(response.data.liunian_dayun[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching bazi analysis:', error);
+        // 这里可以添加错误处理，比如显示一个错误消息给用户
+      } finally {
+        setLoading(false)
       }
-      setStep(2);
-    } catch (error) {
-      console.error('Error fetching bazi analysis:', error);
-      // 这里可以添加错误处理，比如显示一个错误消息给用户
-    }
-  };
+    };
+
+    fetchAnalysis();
+  }, [searchParams]);
 
   const scrollToSelected = (index: number) => {
     if (scrollRef.current && analysisResult) {
@@ -163,71 +142,15 @@ export function BaziAnalysisSystem() {
   };
 
   const handleAiAnalysis = (type: string) => {
-    setActiveAnalysis(type);
     // 这里是模拟的 AI 分析结果，实际使用时需要调用真实的 API
     setAiAnalysisResult(`这是 ${type} 的 AI 分析结果。实际使用时，这里将显示从 API 获取的真实数据。`);
   };
 
   const handleDetailedAnalysis = () => {
-    // 这里我们假设详细分析页面的路由是 '/detailed-analysis'
-    // 您可以根据实际情况调整路由
     router.push('/detailed-analysis')
   }
 
-  if (step === 1) {
-    return (
-      <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
-        <div className="relative py-3 sm:max-w-xl sm:mx-auto">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
-          <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
-            <h1 className="text-2xl font-semibold mb-5 text-center">输入出生信息</h1>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="year">年份</Label>
-                <Input id="year" name="year" value={userInput.year} onChange={handleInputChange} placeholder="例如：1990" required />
-              </div>
-              <div>
-                <Label htmlFor="month">月份</Label>
-                <Input id="month" name="month" value={userInput.month} onChange={handleInputChange} placeholder="1-12" required />
-              </div>
-              <div>
-                <Label htmlFor="day">日期</Label>
-                <Input id="day" name="day" value={userInput.day} onChange={handleInputChange} placeholder="1-31" required />
-              </div>
-              <div>
-                <Label htmlFor="hour">小时</Label>
-                <Input id="hour" name="hour" value={userInput.hour} onChange={handleInputChange} placeholder="0-23" required />
-              </div>
-              <div>
-                <Label htmlFor="minute">分钟</Label>
-                <Input id="minute" name="minute" value={userInput.minute} onChange={handleInputChange} placeholder="0-59" required />
-              </div>
-              <div>
-                <Label htmlFor="gender">性别</Label>
-                <Select name="gender" onValueChange={(value) => handleSelectChange('gender', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择性别" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">男</SelectItem>
-                    <SelectItem value="female">女</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="city">出生城市</Label>
-                <Input id="city" name="city" value={userInput.city} onChange={handleInputChange} placeholder="例如：北京" required />
-              </div>
-              <Button type="submit" className="w-full">开始解析</Button>
-            </form>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // If we're on step 2, show the analysis result
-  if (step === 2 && !analysisResult) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 

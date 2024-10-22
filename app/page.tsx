@@ -1,6 +1,5 @@
-import { EnhancedMysticalDestinyAppWithCharts } from "@/components/enhanced-mystical-destiny-app-with-charts"
-import { BaziAnalysisSystem } from "@/components/bazi-analysis-system"
+import { UserInputForm } from '@/components/userinput'
 
-export default function Page() {
-  return <BaziAnalysisSystem />
+export default function Home() {
+  return <UserInputForm />
 }
