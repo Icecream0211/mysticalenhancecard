@@ -281,9 +281,14 @@ export function BaziAnalysisSystem() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">八字</h2>
             <div className="grid grid-cols-4 gap-4 text-center">
-              {Object.entries(analysisResult?.bazi).map(([key, value]) => (
+              {Object.entries(analysisResult?.bazi || {}).map(([key, value]) => (
                 <div key={key} className="bg-gray-100 p-2 rounded">
-                  <div className="font-medium text-gray-600">{key}</div>
+                  <div className="font-medium text-gray-600">
+                    {key === 'year' ? '年柱' :
+                     key === 'month' ? '月柱' :
+                     key === 'day' ? '日柱' :
+                     key === 'hour' ? '时柱' : key}
+                  </div>
                   <div className="text-lg">{value}</div>
                 </div>
               ))}
@@ -370,7 +375,7 @@ export function BaziAnalysisSystem() {
                       scrollToSelected(index);
                     }}
                     className={`flex-shrink-0 w-24 p-2 text-center border rounded mr-2 ${
-                      selectedDaYun.start_age === daYun.start_age
+                      selectedDaYun?.start_age === daYun.start_age
                         ? 'bg-blue-500 text-white'
                         : 'bg-white hover:bg-gray-100'
                     }`}
@@ -403,44 +408,46 @@ export function BaziAnalysisSystem() {
             )}
 
             {/* 流年详情 */}
-            <div className="border rounded p-4">
-              <h4 className="text-lg font-semibold mb-2">流年详情</h4>
-              <div className="space-y-2">
-                {selectedDaYun?.liunian.map((liuNian, index) => (
-                  <div key={index} className="border-b pb-2">
-                    <p className="font-medium">{liuNian.year}年 ({liuNian.age}岁) - {liuNian.gan_zhi}</p>
-                    <p className="text-sm">{liuNian.remark}</p>
-                  </div>
-                ))}
+            {selectedDaYun && (
+              <div className="border rounded p-4">
+                <h4 className="text-lg font-semibold mb-2">流年详情</h4>
+                <div className="space-y-2">
+                  {selectedDaYun.liunian.map((liuNian, index) => (
+                    <div key={index} className="border-b pb-2">
+                      <p className="font-medium">{liuNian.year}年 ({liuNian.age}岁) - {liuNian.gan_zhi}</p>
+                      <p className="text-sm">{liuNian.remark}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 导航按钮 */}
             <div className="flex justify-between mt-4">
               <button
                 onClick={() => {
-                  const index = analysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun.start_age);
-                  if (index > 0) {
+                  const index = analysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun?.start_age);
+                  if (index !== undefined && index > 0) {
                     setSelectedDaYun(analysisResult?.liunian_dayun[index - 1]);
                     scrollToSelected(index - 1);
                   }
                 }}
                 className="flex items-center px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                disabled={selectedDaYun.start_age === analysisResult?.liunian_dayun[0].start_age}
+                disabled={selectedDaYun?.start_age === analysisResult?.liunian_dayun[0]?.start_age}
               >
                 <ChevronLeftIcon className="w-5 h-5 mr-2" />
                 上一大运
               </button>
               <button
                 onClick={() => {
-                  const index = analysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun.start_age);
-                  if (index < analysisResult?.liunian_dayun.length - 1) {
-                    setSelectedDaYun(analysisResult?.liunian_dayun[index + 1]);
+                  const index = analysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun?.start_age);
+                  if (index !== undefined && analysisResult && index < analysisResult.liunian_dayun.length - 1) {
+                    setSelectedDaYun(analysisResult.liunian_dayun[index + 1]);
                     scrollToSelected(index + 1);
                   }
                 }}
                 className="flex items-center px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                disabled={selectedDaYun.start_age === analysisResult?.liunian_dayun[analysisResult?.liunian_dayun.length - 1].start_age}
+                disabled={selectedDaYun?.start_age === analysisResult?.liunian_dayun[analysisResult?.liunian_dayun.length - 1]?.start_age}
               >
                 下一大运
                 <ChevronRightIcon className="w-5 h-5 ml-2" />
