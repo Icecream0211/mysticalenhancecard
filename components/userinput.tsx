@@ -40,7 +40,7 @@ export function UserInputForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const queryString = new URLSearchParams(userInput).toString()
+    const queryString = new URLSearchParams(userInput as Record<string, string>).toString()
     router.push(`/bazi-analysis?${queryString}`)
   }
 

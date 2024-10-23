@@ -72,7 +72,11 @@ interface BaziAnalysisResult {
   liunian_dayun: DaYun[];
 }
 
-export function BaziAnalysisSystem() {
+interface BaziAnalysisSystemProps {
+  userInput: UserInput
+}
+
+export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [analysisResult, setAnalysisResult] = useState<BaziAnalysisResult | null>(null);
@@ -147,7 +151,18 @@ export function BaziAnalysisSystem() {
   };
 
   const handleDetailedAnalysis = () => {
-    router.push('/detailed-analysis')
+    // 将用户输入数据编码为 URL 参数
+    const queryString = new URLSearchParams({
+      year: userInput.year,
+      month: userInput.month,
+      day: userInput.day,
+      hour: userInput.hour,
+      minute: userInput.minute,
+      gender: userInput.gender,
+      city: userInput.city
+    }).toString()
+    
+    router.push(`/detailed-analysis?${queryString}`)
   }
 
   if (loading) {
@@ -222,7 +237,7 @@ export function BaziAnalysisSystem() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">五行得分</h2>
             <div className="flex justify-between">
-              {Object.entries(analysisResult?.wuxing_scores).map(([element, score]) => (
+              {Object.entries(analysisResult?.wuxing_scores || {}).map(([element, score]) => (
                 <div key={element} className="text-center">
                   <div className="font-medium">{element}</div>
                   <div className="text-lg">{score}</div>
@@ -235,7 +250,7 @@ export function BaziAnalysisSystem() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">天干得分</h2>
             <div className="grid grid-cols-5 gap-4 text-center">
-              {Object.entries(analysisResult?.gan_scores).map(([gan, score]) => (
+              {Object.entries(analysisResult?.gan_scores || {}).map(([gan, score]) => (
                 <div key={gan} className="bg-gray-100 p-2 rounded">
                   <div className="font-medium">{gan}</div>
                   <div>{score}</div>
@@ -268,7 +283,7 @@ export function BaziAnalysisSystem() {
 
           {/* 其他信息 */}
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-700">其他信息</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-gray-700">其信息</h2>
             <div><span className="font-medium">调候：</span>{analysisResult?.tiao_hou}</div>
             <div><span className="font-medium">金不换：</span>{analysisResult?.jin_bu_huan}</div>
             <div><span className="font-medium">局：</span>{analysisResult?.ge_ju.join(', ')}</div>
@@ -311,7 +326,7 @@ export function BaziAnalysisSystem() {
               </div>
             </div>
 
-            {/* 选中的大运详情 */}
+            {/* 选中的大��详情 */}
             {selectedDaYun && (
               <div className="border rounded p-4 mb-4">
                 <h3 className="text-xl font-bold mb-2">
@@ -351,7 +366,7 @@ export function BaziAnalysisSystem() {
                 onClick={() => {
                   const index = analysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun?.start_age);
                   if (index !== undefined && index > 0) {
-                    setSelectedDaYun(analysisResult?.liunian_dayun[index - 1]);
+                    setSelectedDaYun(analysisResult?.liunian_dayun[index - 1] as DaYun);
                     scrollToSelected(index - 1);
                   }
                 }}
