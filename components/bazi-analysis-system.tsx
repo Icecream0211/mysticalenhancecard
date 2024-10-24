@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import axios from 'axios'
 import html2canvas from 'html2canvas'
 import { useRouter, useSearchParams } from 'next/navigation'
+import config from '@/config'
 
 interface UserInput {
   year: string
@@ -76,6 +77,17 @@ interface BaziAnalysisSystemProps {
   userInput: UserInput
 }
 
+// 将 decodeText 函数移到组件外部
+const decodeText = (text: string | undefined): string => {
+  if (!text) return '';
+  try {
+    return decodeURIComponent(escape(text));
+  } catch (e) {
+    console.error('Decoding failed', e);
+    return text;
+  }
+};
+
 export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -85,16 +97,30 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
   const resultRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
 
+  // 使用 useMemo 缓存解码后的结果
+  const decodedAnalysisResult = useMemo(() => {
+    if (!analysisResult) return null;
+    return {
+      ...analysisResult,
+      solar_date: decodeText(analysisResult.solar_date),
+      lunar_date: decodeText(analysisResult.lunar_date),
+      gender: decodeText(analysisResult.gender),
+      is_solar: decodeText(analysisResult.is_solar),
+      is_run_yuer: decodeText(analysisResult.is_run_yuer),
+    };
+  }, [analysisResult]);
+
   useEffect(() => {
     const fetchAnalysis = async () => {
+      if (analysisResult) return; // 如果已经有结果，就不再请求
       setLoading(true)
       const formData = new FormData();
-      searchParams.forEach((value, key) => {
+      Object.entries(userInput).forEach(([key, value]) => {
         formData.append(key, value);
       });
 
       try {
-        const response = await axios.post('http://127.0.0.1:8000/calculate_bazi_need/', formData, {
+        const response = await axios.post(`${config.apiBaseUrl}/calculate_bazi_need/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -105,14 +131,13 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
         }
       } catch (error) {
         console.error('Error fetching bazi analysis:', error);
-        // 这里可以添加错误处理，比如显示一个错误消息给用户
       } finally {
         setLoading(false)
       }
     };
 
     fetchAnalysis();
-  }, [searchParams]);
+  }, [userInput, analysisResult]);
 
   const scrollToSelected = (index: number) => {
     if (scrollRef.current && analysisResult) {
@@ -133,17 +158,6 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
       link.click()
     }
   }
-
-  // 在基本信息部分，我们可以添加一个简单的解码函数来处理可能的乱码
-  const decodeText = (text: string | undefined): string => {
-    if (!text) return '';
-    try {
-      return decodeURIComponent(escape(text));
-    } catch (e) {
-      console.error('Decoding failed', e);
-      return text; // 如果解码失败，返回原始文本
-    }
-  };
 
   const handleDetailedAnalysis = () => {
     // 将用户输入数据编码为 URL 参数
@@ -185,11 +199,11 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">基本信息</h2>
             <div className="grid grid-cols-2 gap-4">
-              <div><span className="font-medium">公历日期：</span>{decodeText(analysisResult?.solar_date)}</div>
-              <div><span className="font-medium">农历日期：</span>{decodeText(analysisResult?.lunar_date)}</div>
-              <div><span className="font-medium">性别：</span>{decodeText(analysisResult?.gender)}</div>
-              <div><span className="font-medium">历法：</span>{decodeText(analysisResult?.is_solar)}</div>
-              <div><span className="font-medium">是否闰月：</span>{decodeText(analysisResult?.is_run_yuer)}</div>
+              <div><span className="font-medium">公历日期：</span>{decodedAnalysisResult?.solar_date}</div>
+              <div><span className="font-medium">农历日期：</span>{decodedAnalysisResult?.lunar_date}</div>
+              <div><span className="font-medium">性别：</span>{decodedAnalysisResult?.gender}</div>
+              <div><span className="font-medium">历法：</span>{decodedAnalysisResult?.is_solar}</div>
+              <div><span className="font-medium">是否闰月：</span>{decodedAnalysisResult?.is_run_yuer}</div>
             </div>
           </section>
 
@@ -214,7 +228,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">八字</h2>
             <div className="grid grid-cols-4 gap-4 text-center">
-              {Object.entries(analysisResult?.bazi || {}).map(([key, value]) => (
+              {Object.entries(decodedAnalysisResult?.bazi || {}).map(([key, value]) => (
                 <div key={key} className="bg-gray-100 p-2 rounded">
                   <div className="font-medium text-gray-600">
                     {key === 'year' ? '年柱' :
@@ -232,7 +246,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">五行得分</h2>
             <div className="flex justify-between">
-              {Object.entries(analysisResult?.wuxing_scores || {}).map(([element, score]) => (
+              {Object.entries(decodedAnalysisResult?.wuxing_scores || {}).map(([element, score]) => (
                 <div key={element} className="text-center">
                   <div className="font-medium">{element}</div>
                   <div className="text-lg">{score}</div>
@@ -245,7 +259,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">天干得分</h2>
             <div className="grid grid-cols-5 gap-4 text-center">
-              {Object.entries(analysisResult?.gan_scores || {}).map(([gan, score]) => (
+              {Object.entries(decodedAnalysisResult?.gan_scores || {}).map(([gan, score]) => (
                 <div key={gan} className="bg-gray-100 p-2 rounded">
                   <div className="font-medium">{gan}</div>
                   <div>{score}</div>
@@ -258,9 +272,9 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">强弱分数</h2>
             <div>
-              <div><span className="font-medium">强度：</span>{analysisResult?.strong_weak_score.strong}</div>
-              <div><span className="font-medium">是否弱：</span>{analysisResult?.strong_weak_score.weak ? '是' : '否'}</div>
-              <div><span className="font-medium">备注：</span>{analysisResult?.strong_weak_score.remark}</div>
+              <div><span className="font-medium">强度：</span>{decodedAnalysisResult?.strong_weak_score.strong}</div>
+              <div><span className="font-medium">是否弱：</span>{decodedAnalysisResult?.strong_weak_score.weak ? '是' : '否'}</div>
+              <div><span className="font-medium">备注：</span>{decodedAnalysisResult?.strong_weak_score.remark}</div>
             </div>
           </section>
 
@@ -268,7 +282,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">大运</h2>
             <div className="grid grid-cols-6 gap-2 text-center">
-              {analysisResult?.da_yun.map((dayun, index) => (
+              {decodedAnalysisResult?.da_yun.map((dayun, index) => (
                 <div key={index} className="bg-gray-100 p-2 rounded">
                   {dayun}
                 </div>
@@ -279,17 +293,17 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
           {/* 其他信息 */}
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">其信息</h2>
-            <div><span className="font-medium">调候：</span>{analysisResult?.tiao_hou}</div>
-            <div><span className="font-medium">金不换：</span>{analysisResult?.jin_bu_huan}</div>
-            <div><span className="font-medium">局：</span>{analysisResult?.ge_ju.join(', ')}</div>
+            <div><span className="font-medium">调候：</span>{decodedAnalysisResult?.tiao_hou}</div>
+            <div><span className="font-medium">金不换：</span>{decodedAnalysisResult?.jin_bu_huan}</div>
+            <div><span className="font-medium">局：</span>{decodedAnalysisResult?.ge_ju.join(', ')}</div>
           </section>
 
           {/* 温度得分 */}
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 text-gray-700">温度得分</h2>
             <div>
-              <div><span className="font-medium">得分：</span>{analysisResult?.temp_scores.temps_scores}</div>
-              <div><span className="font-medium">备注：</span>{analysisResult?.temp_scores.remark}</div>
+              <div><span className="font-medium">得分：</span>{decodedAnalysisResult?.temp_scores.temps_scores}</div>
+              <div><span className="font-medium">备注：</span>{decodedAnalysisResult?.temp_scores.remark}</div>
             </div>
           </section>
 
@@ -300,7 +314,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
             {/* 大运选择器 */}
             <div className="relative mb-6">
               <div ref={scrollRef} className="flex overflow-x-auto pb-2 hide-scrollbar">
-                {analysisResult?.liunian_dayun.map((daYun, index) => (
+                {decodedAnalysisResult?.liunian_dayun.map((daYun, index) => (
                   <button
                     key={daYun.start_age}
                     onClick={() => {
@@ -321,7 +335,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
               </div>
             </div>
 
-            {/* 选中的大��详情 */}
+            {/* 选中的大详情 */}
             {selectedDaYun && (
               <div className="border rounded p-4 mb-4">
                 <h3 className="text-xl font-bold mb-2">
@@ -359,28 +373,28 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
             <div className="flex justify-between mt-4">
               <button
                 onClick={() => {
-                  const index = analysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun?.start_age);
+                  const index = decodedAnalysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun?.start_age);
                   if (index !== undefined && index > 0) {
-                    setSelectedDaYun(analysisResult?.liunian_dayun[index - 1] as DaYun);
+                    setSelectedDaYun(decodedAnalysisResult?.liunian_dayun[index - 1] as DaYun);
                     scrollToSelected(index - 1);
                   }
                 }}
                 className="flex items-center px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                disabled={selectedDaYun?.start_age === analysisResult?.liunian_dayun[0]?.start_age}
+                disabled={selectedDaYun?.start_age === decodedAnalysisResult?.liunian_dayun[0]?.start_age}
               >
                 <ChevronLeftIcon className="w-5 h-5 mr-2" />
                 上一大运
               </button>
               <button
                 onClick={() => {
-                  const index = analysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun?.start_age);
-                  if (index !== undefined && analysisResult && index < analysisResult.liunian_dayun.length - 1) {
-                    setSelectedDaYun(analysisResult.liunian_dayun[index + 1]);
+                  const index = decodedAnalysisResult?.liunian_dayun.findIndex(d => d.start_age === selectedDaYun?.start_age);
+                  if (index !== undefined && decodedAnalysisResult && index < decodedAnalysisResult.liunian_dayun.length - 1) {
+                    setSelectedDaYun(decodedAnalysisResult.liunian_dayun[index + 1]);
                     scrollToSelected(index + 1);
                   }
                 }}
                 className="flex items-center px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                disabled={selectedDaYun?.start_age === analysisResult?.liunian_dayun[analysisResult?.liunian_dayun.length - 1]?.start_age}
+                disabled={selectedDaYun?.start_age === decodedAnalysisResult?.liunian_dayun[decodedAnalysisResult?.liunian_dayun.length - 1]?.start_age}
               >
                 下一大运
                 <ChevronRightIcon className="w-5 h-5 ml-2" />

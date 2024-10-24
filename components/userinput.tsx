@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from 'next/navigation'
+import { useUserInput } from '../contexts/UserInputContext'
 
 interface UserInput {
   year: string
@@ -19,15 +20,7 @@ interface UserInput {
 
 export function UserInput() {
   const router = useRouter()
-  const [userInput, setUserInput] = useState<UserInput>({
-    year: '',
-    month: '',
-    day: '',
-    hour: '',
-    minute: '',
-    gender: '',
-    city: '',
-  })
+  const { userInput, setUserInput } = useUserInput()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -40,13 +33,7 @@ export function UserInput() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // 修改这里，明确指定每个属性
-    const params = new URLSearchParams()
-    Object.entries(userInput).forEach(([key, value]) => {
-      params.append(key, value)
-    })
-    const queryString = params.toString()
-    router.push(`/bazi-analysis?${queryString}`)
+    router.push('/bazi-analysis')
   }
 
   return (
