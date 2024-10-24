@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    "output": 'standalone'
+    /**"output": 'standalone'   独立部署**/
+
+    /**output: 'export' 静态部署**/
+    
 };
 
 
