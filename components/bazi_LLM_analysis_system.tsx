@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import config from '@/config'
 
 interface UserInput {
   year: string
@@ -60,12 +61,17 @@ export function BaziLLMAnalysisSystem({ userInput }: BaziLLMAnalysisSystemProps)
     }))
     
     const formData = new FormData()
-    Object.entries(userInput).forEach(([key, value]) => {
-      formData.append(key, value)
-    })
+    // 修改这里，明确指定每个属性
+    formData.append('year', userInput.year)
+    formData.append('month', userInput.month)
+    formData.append('day', userInput.day)
+    formData.append('hour', userInput.hour)
+    formData.append('minute', userInput.minute)
+    formData.append('gender', userInput.gender)
+    formData.append('city', userInput.city)
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/${endpoint}`, {
+      const response = await fetch(`${config.apiBaseUrl}/${endpoint}`, {
         method: 'POST',
         body: formData,
         signal: abortControllersRef.current[key].signal

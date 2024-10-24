@@ -17,7 +17,7 @@ interface UserInput {
   city: string
 }
 
-export function UserInputForm() {
+export function UserInput() {
   const router = useRouter()
   const [userInput, setUserInput] = useState<UserInput>({
     year: '',
@@ -26,7 +26,7 @@ export function UserInputForm() {
     hour: '',
     minute: '',
     gender: '',
-    city: ''
+    city: '',
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +40,12 @@ export function UserInputForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const queryString = new URLSearchParams(userInput as Record<string, string>).toString()
+    // 修改这里，明确指定每个属性
+    const params = new URLSearchParams()
+    Object.entries(userInput).forEach(([key, value]) => {
+      params.append(key, value)
+    })
+    const queryString = params.toString()
     router.push(`/bazi-analysis?${queryString}`)
   }
 

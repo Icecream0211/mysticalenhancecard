@@ -1,5 +1,5 @@
-import { UserInputForm } from '@/components/userinput'
+import { UserInput } from '@/components/userinput'
 
 export default function Home() {
-  return <UserInputForm />
+  return <UserInput />
 }

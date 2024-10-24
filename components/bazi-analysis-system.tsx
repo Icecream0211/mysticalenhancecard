@@ -145,11 +145,6 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
     }
   };
 
-  const handleAiAnalysis = (type: string) => {
-    // 这里是模拟的 AI 分析结果，实际使用时需要调用真实的 API
-    setAiAnalysisResult(`这是 ${type} 的 AI 分析结果。实际使用时，这里将显示从 API 获取的真实数据。`);
-  };
-
   const handleDetailedAnalysis = () => {
     // 将用户输入数据编码为 URL 参数
     const queryString = new URLSearchParams({
