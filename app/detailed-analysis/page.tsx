@@ -1,14 +1,15 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import { Suspense } from 'react'
-
-const DetailedAnalysisContent = dynamic(() => import('@/components/detailed-analysis-content'), { ssr: false })
+import React from 'react'
+import { BaziLLMAnalysisSystem } from '@/components/bazi_LLM_analysis_system'
+import { useUserInput } from '../../contexts/UserInputContext'
 
 export default function DetailedAnalysisPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <DetailedAnalysisContent />
-    </Suspense>
-  )
+  const { userInput } = useUserInput()
+
+  if (!userInput.year) {
+    return <div>No user input available. Please go back and enter your details.</div>
+  }
+
+  return <BaziLLMAnalysisSystem userInput={userInput} />
 }

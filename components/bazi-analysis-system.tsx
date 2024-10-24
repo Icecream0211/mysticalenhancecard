@@ -11,6 +11,7 @@ import axios from 'axios'
 import html2canvas from 'html2canvas'
 import { useRouter, useSearchParams } from 'next/navigation'
 import config from '@/config'
+import { useUserInput } from '../contexts/UserInputContext'  // 导入 useUserInput hook
 
 interface UserInput {
   year: string
@@ -90,7 +91,6 @@ const decodeText = (text: string | undefined): string => {
 
 export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [analysisResult, setAnalysisResult] = useState<BaziAnalysisResult | null>(null);
   const [selectedDaYun, setSelectedDaYun] = useState<DaYun | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -112,7 +112,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
 
   useEffect(() => {
     const fetchAnalysis = async () => {
-      if (analysisResult) return; // 如果已经有结果，就不再请求
+      if (!userInput.year) return; // 如果没有用户输入，不进行API调用
       setLoading(true)
       const formData = new FormData();
       Object.entries(userInput).forEach(([key, value]) => {
@@ -137,7 +137,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
     };
 
     fetchAnalysis();
-  }, [userInput, analysisResult]);
+  }, [userInput]);
 
   const scrollToSelected = (index: number) => {
     if (scrollRef.current && analysisResult) {
@@ -160,22 +160,19 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
   }
 
   const handleDetailedAnalysis = () => {
-    // 将用户输入数据编码为 URL 参数
-    const queryString = new URLSearchParams({
-      year: userInput.year,
-      month: userInput.month,
-      day: userInput.day,
-      hour: userInput.hour,
-      minute: userInput.minute,
-      gender: userInput.gender,
-      city: userInput.city
-    }).toString()
-    
-    router.push(`/detailed-analysis?${queryString}`)
+    router.push('/detailed-analysis')
+  }
+
+  if (!userInput.year) {
+    return <div>No user input available. Please go back and enter your details.</div>;
   }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>Loading analysis...</div>;
+  }
+
+  if (!analysisResult) {
+    return <div>No analysis result available. Please try again.</div>;
   }
 
   return (

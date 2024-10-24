@@ -33,7 +33,12 @@ export function UserInput() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    router.push('/bazi-analysis')
+    // 确保所有必要的字段都已填写
+    if (userInput.year && userInput.month && userInput.day && userInput.hour && userInput.minute && userInput.gender && userInput.city) {
+      router.push('/bazi-analysis')
+    } else {
+      alert('请填写所有必要的信息')
+    }
   }
 
   return (
