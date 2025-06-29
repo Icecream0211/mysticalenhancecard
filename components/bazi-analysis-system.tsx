@@ -115,18 +115,14 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
       if (!userInput.year) return; // 如果没有用户输入，不进行API调用
       setLoading(true)
 
-      
+      const formData = new FormData();
+      Object.entries(userInput).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+
       try {
-        // 构造请求数据，确保数字字段为 number 类
-        const requestData = {
-          year: parseInt(userInput.year),
-          month: parseInt(userInput.month),
-          day: parseInt(userInput.day),
-          hour: parseInt(userInput.hour),
-          minute: parseInt(userInput.minute)
-        };
         console.log('🚀 发送八字计算请求:', requestData);
-        const response = await axios.post(`${config.apiBaseUrl}/calculate_bazi_need`, requestData, {
+        const response = await axios.post(`${config.apiBaseUrl}/calculate_bazi_need/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
