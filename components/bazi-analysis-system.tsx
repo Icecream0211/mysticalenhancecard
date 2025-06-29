@@ -114,23 +114,31 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
     const fetchAnalysis = async () => {
       if (!userInput.year) return; // 如果没有用户输入，不进行API调用
       setLoading(true)
-      const formData = new FormData();
-      Object.entries(userInput).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
 
+      
       try {
-        const response = await axios.post(`${config.apiBaseUrl}/calculate_bazi_need/`, formData, {
+        // 构造请求数据，确保数字字段为 number 类
+        const requestData = {
+          year: parseInt(userInput.year),
+          month: parseInt(userInput.month),
+          day: parseInt(userInput.day),
+          hour: parseInt(userInput.hour),
+          minute: parseInt(userInput.minute)
+        };
+        console.log('🚀 发送八字计算请求:', requestData);
+        const response = await axios.post(`${config.apiBaseUrl}/calculate_bazi_need`, requestData, {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'multipart/form-data'
           },
         });
+        console.log('✅ API响应成功:', response.data);
         setAnalysisResult(response.data);
         if (response.data.liunian_dayun && response.data.liunian_dayun.length > 0) {
           setSelectedDaYun(response.data.liunian_dayun[0]);
         }
       } catch (error) {
-        console.error('Error fetching bazi analysis:', error);
+        console.error('❌ API调用失败:', error);
+        // 可以在这里添加用户友好的错误提示
       } finally {
         setLoading(false)
       }
