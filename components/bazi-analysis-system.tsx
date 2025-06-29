@@ -121,7 +121,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
       });
 
       try {
-        console.log('🚀 发送八字计算请求:', requestData);
+        console.log('🚀 发送八字计算请求:', formData);
         const response = await axios.post(`${config.apiBaseUrl}/calculate_bazi_need`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
