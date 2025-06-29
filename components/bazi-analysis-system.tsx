@@ -114,8 +114,10 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
     const fetchAnalysis = async () => {
       if (!userInput.year) return; // 如果没有用户输入，不进行API调用
       setLoading(true)
+
+      
       try {
-        // 构造请求数据，确保数字字段为 number 类型
+        // 构造请求数据，确保数字字段为 number 类
         const requestData = {
           year: parseInt(userInput.year),
           month: parseInt(userInput.month),
@@ -126,7 +128,7 @@ export function BaziAnalysisSystem({ userInput }: BaziAnalysisSystemProps) {
         console.log('🚀 发送八字计算请求:', requestData);
         const response = await axios.post(`${config.apiBaseUrl}/calculate_bazi_need`, requestData, {
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'multipart/form-data'
           },
         });
         console.log('✅ API响应成功:', response.data);
